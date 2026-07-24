@@ -35,6 +35,9 @@ td.rk{color:var(--mut);font-size:12px}
 .big{font-weight:600;color:#fff}
 .note{font-size:12px;color:var(--mut);margin-top:14px;line-height:1.55;border-top:1px solid var(--line);padding-top:12px}
 .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+tbody tr.pinrow td{background:#123a44!important;color:#eafcff;font-weight:600}
+tbody tr.pinrow td:nth-child(2){box-shadow:inset 3px 0 0 #5bb8cc}
+tbody tr.pinrow td.fcol{background:#123a30!important;color:#a8e6cf}
 @media (max-width:640px){
  .wrap{padding:16px 10px 48px}
  h1{font-size:19px}
@@ -96,7 +99,8 @@ function render(){
  const mn=+minsel.value; if(mn) rows=rows.filter(r=>r.abd>=mn);
  rows.forEach(r=>r.perfellow=pf(r));
  rows.sort((a,b)=>{let x=a[sortKey],y=b[sortKey];if(typeof x==='string'){x=x.toLowerCase();y=y.toLowerCase();return asc?(x<y?-1:x>y?1:0):(x>y?-1:x<y?1:0);}x=x===''?-1:x;y=y===''?-1:y;return asc?x-y:y-x;});
- tb.innerHTML=rows.map(r=>`<tr><td class="rk">${r._i}</td><td>${r.name}</td><td>${r.state}</td><td class="big">${r.total}</td><td>${r.kidney}</td><td class="rk">${r.rank_kidney}</td><td>${r.liver}</td><td class="rk">${r.rank_liver}</td><td>${r.panc}</td><td>${r.kp}</td><td class="big">${r.abd}</td><td class="rk">${r.rank_abd}</td><td class="fcol">${r.perfellow}</td></tr>`).join('');
+ const pi=rows.findIndex(r=>r.name==='Johns Hopkins Hospital');if(pi>0){rows.unshift(rows.splice(pi,1)[0]);}
+ tb.innerHTML=rows.map(r=>`<tr class="${r.name==='Johns Hopkins Hospital'?'pinrow':''}"><td class="rk">${r._i}</td><td>${r.name}</td><td>${r.state}</td><td class="big">${r.total}</td><td>${r.kidney}</td><td class="rk">${r.rank_kidney}</td><td>${r.liver}</td><td class="rk">${r.rank_liver}</td><td>${r.panc}</td><td>${r.kp}</td><td class="big">${r.abd}</td><td class="rk">${r.rank_abd}</td><td class="fcol">${r.perfellow}</td></tr>`).join('');
  count.textContent=rows.length+' of '+DATA.length+' programs';
  document.querySelectorAll('th').forEach(th=>{th.classList.toggle('sorted',th.dataset.k===sortKey);th.classList.toggle('asc',th.dataset.k===sortKey&&asc);});
 }
