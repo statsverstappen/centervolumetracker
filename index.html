@@ -17,6 +17,13 @@ h1{font-size:22px;margin:0 0 4px;color:#fff}
 .livechip .dot{width:7px;height:7px;border-radius:50%;background:var(--grow)}
 .panel{background:var(--panel);border:1px solid var(--panelbd);border-radius:10px;padding:12px 14px;margin:14px 0 0;font-size:13px;line-height:1.55;color:#cdd8d3}
 .panel b{color:#7fd9bd}
+.leadbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.leadbar .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);color:var(--mut);border:0;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:#fff}
+.seg button:focus-visible{outline:2px solid #7fd9bd;outline-offset:-2px}
 .leaders{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:12px;margin-bottom:14px}
 .lead{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .lead h3{margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
@@ -70,11 +77,14 @@ tr.open .caret{transform:rotate(90deg)}
 .pace-up{color:var(--grow);font-weight:600}
 .pace-dn{color:var(--decl);font-weight:600}
 .pace-ev{color:var(--mut)}
-tr.detail>td{background:#0f1a1f;padding:0;border-bottom:1px solid var(--line);white-space:normal}
+tr.detail>td{background:#0f1a1f;padding:0;border-bottom:1px solid var(--line);white-space:normal;text-align:left}
 .dwrap{position:sticky;left:0;max-width:calc(100vw - 24px);padding:14px 16px 16px}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-.dpanel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
-.dpanel h4{margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.dpanel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0;position:relative}
+.dpanel h4{margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);text-align:right}
+.drank{position:absolute;top:9px;left:12px;font-size:14px;font-weight:700;color:#fff;background:rgba(139,152,161,.14);border-radius:6px;padding:2px 8px;line-height:1.4;font-variant-numeric:tabular-nums}
+.drank small{font-weight:600;color:var(--mut);font-size:10px;margin-left:1px}
+.dpanel .drank + h4 + .dmeta{margin-top:14px}
 .dpanel h4 .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 .dmeta{font-size:12.5px;color:#cdd8d3;margin:0 0 8px;line-height:1.5}
 .dtblwrap{overflow-x:auto}
@@ -114,6 +124,11 @@ tr.detail>td{background:#0f1a1f;padding:0;border-bottom:1px solid var(--line);wh
 <div class="wrap">
 <h1>US Transplant Center Volumes<span class="livechip"><span class="dot"></span>refreshed monthly</span></h1>
 <p class="sub">All active US abdominal transplant programs, calendar years 2021&ndash;2025 plus <b>2026 year-to-date</b>, split by donor type. OPTN national data as of <b id="asof-label"></b>. <b>Click any center for its five-year trend</b> &mdash; total and living-donor trajectories, growth badges, and 2026 pace. Click column headers to sort.</p>
+<div class="leadbar"><span class="lbl">Growth window</span>
+  <span class="seg" role="group" aria-label="Growth window">
+    <button id="win5" class="on">5-year (2021&ndash;25)</button><button id="win1">1-year (2024&ndash;25)</button><button id="win26">2026 pace (annualized)</button>
+  </span>
+</div>
 <div class="leaders">
   <div class="lead"><h3><span class="sw" style="background:var(--liv)"></span>Fastest-growing liver programs</h3><ol id="lead-liver"></ol></div>
   <div class="lead"><h3><span class="sw" style="background:var(--kid)"></span>Fastest-growing kidney programs</h3><ol id="lead-kidney"></ol></div>
@@ -201,35 +216,49 @@ const rows = DATA.map(c => {
 });
 rows.forEach(r => { r.growing = (r.kTrend && r.kTrend.strong) || (r.lTrend && r.lTrend.strong); });
 
+// national rank pools (computed once; ranks are competition-style: 1 + count of strictly larger)
+const kAct25 = rows.filter(x => x.k25 > 0), kAct5 = rows.filter(x => x.k5T > 0);
+const lAct25 = rows.filter(x => x.l25 > 0), lAct5 = rows.filter(x => x.l5T > 0);
+const kShareElig = rows.filter(x => x.k5T >= 100);
+const lShareElig = rows.filter(x => x.l5T >= 50);
+const rankOf = (pool, key, v) => pool.filter(x => x[key] > v).length + 1;
+
 // state dropdown
 const stSel = document.getElementById('state');
 [...new Set(rows.map(r=>r.s))].sort().forEach(s => {
   const o = document.createElement('option'); o.value = s; o.textContent = STATES[s] || s; stSel.appendChild(o);
 });
 
-// leader cards
-function leaders(orgTot, orgKey){
-  return rows
-    .filter(r => r[orgKey+'25'] >= 25 && r[orgKey+'Trend'] && r[orgKey+'Trend'].cls !== 'b-dn')
-    .map(r => ({r, gain: r[orgTot][4] - r[orgTot][0], base: r[orgTot][0], cur: r[orgTot][4]}))
-    .filter(o => o.gain > 0)
-    .sort((a,b) => b.gain - a.gain).slice(0,5);
-}
+// leader cards — growth cards honor the 5-year / 1-year window toggle
+let growWin = '5yr'; // '5yr' -> base 2021 (idx 0); '1yr' -> base 2024 (idx 3)
 function fillLead(id, list, fmt, deltaFmt){
   document.getElementById(id).innerHTML = list.map(o => {
     return '<li><span class="nm" data-c="'+o.r.c+'" title="'+o.r.n.replace(/"/g,'&quot;')+'">'+o.r.n+'</span>'
-      + '<span class="vols">'+fmt(o)+'</span>'
       + '<span class="delta">'+deltaFmt(o)+'</span></li>';
   }).join('');
 }
 const growDelta = o => o.base < 10 ? 'new' : '+'+Math.round((o.cur/o.base-1)*100)+'%';
-fillLead('lead-liver', leaders('lT','l'), o => o.base+'→'+o.cur, growDelta);
-fillLead('lead-kidney', leaders('kT','k'), o => o.base+'→'+o.cur, growDelta);
-fillLead('lead-ldgrow',
-  rows.filter(r => r.ldNow >= 20 && r.ldNow > r.ldBase)
-      .map(r => ({r, base: r.ldBase, cur: r.ldNow, gain: r.ldNow - r.ldBase}))
-      .sort((a,b) => b.gain - a.gain).slice(0,5),
-  o => o.base+'→'+o.cur+' LD', growDelta);
+function renderLeaders(){
+  // '5yr': 2021→2025 · '1yr': 2024→2025 · '26': 2025→annualized 2026
+  const is26 = growWin === '26';
+  const bi = growWin === '5yr' ? 0 : (growWin === '1yr' ? 3 : 4);
+  const cur = arr => is26 ? Math.round(arr[5]/frac) : arr[4];
+  const arrow = is26 ? '→≈' : '→';
+  const volLeaders = orgTot => rows
+    .map(r => ({r, base: r[orgTot][bi], cur: cur(r[orgTot])}))
+    .filter(o => o.cur >= 25 && o.cur > o.base)
+    .map(o => ({...o, gain: o.cur - o.base}))
+    .sort((a,b) => b.gain - a.gain).slice(0,5);
+  fillLead('lead-liver', volLeaders('lT'), o => o.base+arrow+o.cur, growDelta);
+  fillLead('lead-kidney', volLeaders('kT'), o => o.base+arrow+o.cur, growDelta);
+  fillLead('lead-ldgrow',
+    rows.map(r => ({r, base: r.kL[bi] + r.lL[bi], cur: is26 ? Math.round((r.kL[5]+r.lL[5])/frac) : r.kL[4]+r.lL[4]}))
+        .filter(o => o.cur >= 20 && o.cur > o.base)
+        .map(o => ({...o, gain: o.cur - o.base}))
+        .sort((a,b) => b.gain - a.gain).slice(0,5),
+    o => o.base+arrow+o.cur+' LD', growDelta);
+}
+renderLeaders();
 fillLead('lead-ld',
   rows.filter(r => r.k5T >= 100).sort((a,b)=>b.ld5Share-a.ld5Share).slice(0,5)
       .map(o => ({r:o, share:o.ld5Share})),
@@ -240,10 +269,20 @@ fillLead('lead-ldlt',
       .map(o => ({r:o, share:o.ldlt5Share})),
   o => o.r.l5L + ' LDLT / ' + o.r.l5T + ' liver',
   o => Math.round(o.share*100)+'% LD');
-document.querySelectorAll('.lead .nm').forEach(el => el.addEventListener('click', () => {
+[['win5','5yr'],['win1','1yr'],['win26','26']].forEach(([id, w]) => {
+  document.getElementById(id).addEventListener('click', () => {
+    growWin = w;
+    [['win5','5yr'],['win1','1yr'],['win26','26']].forEach(([bid, bw]) =>
+      document.getElementById(bid).classList.toggle('on', w === bw));
+    renderLeaders();
+  });
+});
+document.querySelector('.leaders').addEventListener('click', e => {
+  const el = e.target.closest('.nm');
+  if (!el) return;
   document.getElementById('q').value = el.title; openCode = el.dataset.c; render();
   document.getElementById('tbl').scrollIntoView({behavior:'smooth',block:'start'});
-}));
+});
 
 // detail chart: total (solid) + living (dashed), 2021-2025 with annualized 2026 hollow endpoints
 function detailSVG(tot, liv, color){
@@ -275,14 +314,24 @@ function detailSVG(tot, liv, color){
   s += '</svg>';
   return s;
 }
-function organDetail(name, cssVar, tot, liv, tr, pc, ldLabel){
+function ord(n){
+  const t = n % 100;
+  const s = (t >= 11 && t <= 13) ? 'th' : (n % 10 === 1 ? 'st' : n % 10 === 2 ? 'nd' : n % 10 === 3 ? 'rd' : 'th');
+  return n + '<small>' + s + '</small>';
+}
+function rankChip(n, title){
+  return n ? '<span class="drank" title="'+title+'">'+ord(n)+'</span>' : '';
+}
+function organDetail(name, cssVar, tot, liv, tr, pc, ldLabel, rankTx, cornerRank){
   const yrsHdr = YRS.map((y,i)=> '<th>'+(i===5?'’26 YTD':y)+'</th>').join('');
   const totRow = tot.map(v=>'<td>'+v+'</td>').join('');
   const livRow = liv.map(v=>'<td>'+v+'</td>').join('');
   const badge = tr ? '<span class="badge '+tr.cls+'">'+tr.label+'</span>' : '<span class="badge b-flat">steady</span>';
   const paceTx = pc ? '<span class="'+pc.cls+'">'+pc.ch+' ’26 annualized ≈ '+pc.ann+'</span>' : '<span class="pace-ev">’26 pace n/a</span>';
-  return '<div class="dpanel"><h4><span class="sw" style="background:var('+cssVar+')"></span>'+name+'</h4>'
+  return '<div class="dpanel">'+rankChip(cornerRank, '2025 national rank by '+name.toLowerCase()+' volume')
+    + '<h4><span class="sw" style="background:var('+cssVar+')"></span>'+name+'</h4>'
     + '<p class="dmeta">'+badge+' vs 2021 &nbsp;&middot;&nbsp; '+paceTx+'</p>'
+    + (rankTx ? '<p class="dmeta">'+rankTx+'</p>' : '')
     + detailSVG(tot, liv, 'var('+cssVar+')')
     + '<div class="dleg" style="--c:var('+cssVar+')"><span class="lt">Total</span><span class="ll">'+ldLabel+'</span></div>'
     + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+yrsHdr+'</tr>'
@@ -323,9 +372,20 @@ function shareDetail(r){
   const lS = r.lT.map((t,i)=> t ? r.lL[i]/t : null);
   const pct = v => v==null ? '<span class="dim">–</span>' : Math.round(v*100)+'%';
   const yrsHdr = YRS.map((y,i)=> '<th>'+(i===5?'’26 YTD':y)+'</th>').join('');
-  return '<div class="dpanel"><h4><span class="sw" style="background:var(--grow)"></span>Living-donor share</h4>'
+  const kSR = r.k5T >= 100 ? rankOf(kShareElig, 'ld5Share', r.ld5Share) : null;
+  const lSR = r.l5T >= 50 ? rankOf(lShareElig, 'ldlt5Share', r.ldlt5Share) : null;
+  let shareRank = 'Share rank (2021&ndash;25): ';
+  if (kSR || lSR){
+    shareRank += (kSR ? 'kidney <b>#'+kSR+'</b> of '+kShareElig.length : 'kidney below volume floor')
+      + ' &nbsp;&middot;&nbsp; ' + (lSR ? 'liver <b>#'+lSR+'</b> of '+lShareElig.length : 'liver below volume floor');
+  } else {
+    shareRank += 'below volume floor (kidney &ge; 100, liver &ge; 50 cases over 5 yrs)';
+  }
+  return '<div class="dpanel">'+rankChip(kSR, '5-year living-donor kidney share rank among high-volume programs')
+    + '<h4><span class="sw" style="background:var(--grow)"></span>Living-donor share</h4>'
     + '<p class="dmeta">2021&ndash;25: kidney <b>'+Math.round(r.ld5Share*100)+'%</b> living donor'
     + (r.l5T ? ' &nbsp;&middot;&nbsp; liver <b>'+Math.round(r.ldlt5Share*100)+'%</b>' : '')+'</p>'
+    + '<p class="dmeta">'+shareRank+'</p>'
     + shareSVG(kS, lS)
     + '<div class="dleg"><span class="lt" style="--c:var(--kid)">Kidney</span><span class="lt" style="--c:var(--liv)">Liver (LDLT)</span></div>'
     + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+yrsHdr+'</tr>'
@@ -346,14 +406,26 @@ function detailHTML(r){
   } else {
     rankLine = 'No SPK volume 2021&ndash;25.';
   }
-  const pkRow = '<div class="dpanel"><h4>Pancreas &amp; SPK</h4>'
+  const spkRank25 = r.kp25 > 0 ? active25.filter(x => x.kp25 > r.kp25).length + 1 : null;
+  const pkRow = '<div class="dpanel">'+rankChip(spkRank25, '2025 national rank by SPK volume')
+    + '<h4>Pancreas &amp; SPK</h4>'
     + '<p class="dmeta">'+rankLine+'</p>'
     + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+YRS.map((y,i)=>'<th>'+(i===5?'’26 YTD':y)+'</th>').join('')+'</tr>'
     + '<tr><td>Pancreas</td>'+r.p.map(v=>'<td>'+v+'</td>').join('')+'</tr>'
     + '<tr><td>SPK</td>'+r.kp.map(v=>'<td>'+v+'</td>').join('')+'</tr></table></div></div>';
+  function volRankTx(v25, v5, pool25, pool5, key25, key5){
+    if (!v25 && !v5) return null;
+    const r25 = v25 ? rankOf(pool25, key25, v25) : null;
+    const r5 = v5 ? rankOf(pool5, key5, v5) : null;
+    return 'National rank: '
+      + (r25 ? '<b>#'+r25+'</b> of '+pool25.length+' in 2025' : 'no 2025 cases')
+      + (r5 ? ' &nbsp;&middot;&nbsp; <b>#'+r5+'</b> of '+pool5.length+' over 2021&ndash;25' : '');
+  }
+  const kRankTx = volRankTx(r.k25, r.k5T, kAct25, kAct5, 'k25', 'k5T');
+  const lRankTx = volRankTx(r.l25, r.l5T, lAct25, lAct5, 'l25', 'l5T');
   return '<div class="dwrap"><div class="dgrid">'
-    + organDetail('Kidney', '--kid', r.kT, r.kL, r.kTrend, r.kPace, 'Living donor')
-    + organDetail('Liver', '--liv', r.lT, r.lL, r.lTrend, r.lPace, 'Living donor (LDLT)')
+    + organDetail('Kidney', '--kid', r.kT, r.kL, r.kTrend, r.kPace, 'Living donor', kRankTx, r.k25 > 0 ? rankOf(kAct25,'k25',r.k25) : null)
+    + organDetail('Liver', '--liv', r.lT, r.lL, r.lTrend, r.lPace, 'Living donor (LDLT)', lRankTx, r.l25 > 0 ? rankOf(lAct25,'l25',r.l25) : null)
     + shareDetail(r)
     + pkRow + '</div></div>';
 }
