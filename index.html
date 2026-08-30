@@ -289,16 +289,72 @@ function organDetail(name, cssVar, tot, liv, tr, pc, ldLabel){
     + '<tr><td>Total</td>'+totRow+'</tr>'
     + '<tr><td>Living</td>'+livRow+'</tr></table></div></div>';
 }
+function shareSVG(kShare, lShare){
+  // shares as fractions per year (null when no volume); '26 YTD plotted hollow
+  const w = 330, h = 96, padL = 8, padR = 40, padY = 12, n = 6;
+  const vals = kShare.concat(lShare).filter(v => v != null);
+  const mx = Math.max(0.25, ...vals);
+  const x = i => padL + i*(w-padL-padR)/(n-1);
+  const y = v => h - padY - (v/mx)*(h-2*padY);
+  function line(arr, color, dash){
+    let d = '', s = '';
+    arr.slice(0,5).forEach((v,i)=>{ if(v==null) return; d += (d?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1); });
+    if (d) s += '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    const l25 = arr[4];
+    if (l25 != null){
+      s += '<circle cx="'+x(4)+'" cy="'+y(l25)+'" r="2.6" fill="'+color+'"/>';
+      s += '<text x="'+(x(4)+6)+'" y="'+(y(l25)+3)+'" fill="var(--mut)" font-size="10">'+Math.round(l25*100)+'%</text>';
+    }
+    if (arr[5] != null && l25 != null){
+      s += '<line x1="'+x(4)+'" y1="'+y(l25)+'" x2="'+x(5)+'" y2="'+y(arr[5])+'" stroke="'+color+'" stroke-width="1.4" stroke-dasharray="2 2" opacity=".6"/>';
+      s += '<circle cx="'+x(5)+'" cy="'+y(arr[5])+'" r="2.8" fill="var(--surface)" stroke="'+color+'" stroke-width="1.6"/>';
+    }
+    return s;
+  }
+  let s = '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" style="max-width:100%;height:auto">';
+  s += '<line x1="'+padL+'" y1="'+y(0)+'" x2="'+(w-padR)+'" y2="'+y(0)+'" stroke="var(--line)" stroke-width="1"/>';
+  s += line(kShare, 'var(--kid)');
+  s += line(lShare, 'var(--liv)');
+  s += '</svg>';
+  return s;
+}
+function shareDetail(r){
+  const kS = r.kT.map((t,i)=> t ? r.kL[i]/t : null);
+  const lS = r.lT.map((t,i)=> t ? r.lL[i]/t : null);
+  const pct = v => v==null ? '<span class="dim">–</span>' : Math.round(v*100)+'%';
+  const yrsHdr = YRS.map((y,i)=> '<th>'+(i===5?'’26 YTD':y)+'</th>').join('');
+  return '<div class="dpanel"><h4><span class="sw" style="background:var(--grow)"></span>Living-donor share</h4>'
+    + '<p class="dmeta">2021&ndash;25: kidney <b>'+Math.round(r.ld5Share*100)+'%</b> living donor'
+    + (r.l5T ? ' &nbsp;&middot;&nbsp; liver <b>'+Math.round(r.ldlt5Share*100)+'%</b>' : '')+'</p>'
+    + shareSVG(kS, lS)
+    + '<div class="dleg"><span class="lt" style="--c:var(--kid)">Kidney</span><span class="lt" style="--c:var(--liv)">Liver (LDLT)</span></div>'
+    + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+yrsHdr+'</tr>'
+    + '<tr><td>Kidney</td>'+kS.map(v=>'<td>'+pct(v)+'</td>').join('')+'</tr>'
+    + '<tr><td>Liver</td>'+lS.map(v=>'<td>'+pct(v)+'</td>').join('')+'</tr></table></div></div>';
+}
 function detailHTML(r){
+  const kp5 = x => x.kp.slice(0,5).reduce((a,b)=>a+b,0);
+  const active25 = rows.filter(x => x.kp25 > 0);
+  const active5 = rows.filter(x => kp5(x) > 0);
+  let rankLine;
+  if (r.kp25 > 0 || kp5(r) > 0){
+    const rk25 = r.kp25 > 0 ? (active25.filter(x => x.kp25 > r.kp25).length + 1) : null;
+    const rk5 = kp5(r) > 0 ? (active5.filter(x => kp5(x) > kp5(r)).length + 1) : null;
+    rankLine = 'SPK volume, national rank: '
+      + (rk25 ? '<b>#'+rk25+'</b> of '+active25.length+' programs in 2025' : 'no 2025 cases')
+      + (rk5 ? ' &nbsp;&middot;&nbsp; <b>#'+rk5+'</b> of '+active5.length+' over 2021&ndash;25' : '');
+  } else {
+    rankLine = 'No SPK volume 2021&ndash;25.';
+  }
   const pkRow = '<div class="dpanel"><h4>Pancreas &amp; SPK</h4>'
+    + '<p class="dmeta">'+rankLine+'</p>'
     + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+YRS.map((y,i)=>'<th>'+(i===5?'’26 YTD':y)+'</th>').join('')+'</tr>'
     + '<tr><td>Pancreas</td>'+r.p.map(v=>'<td>'+v+'</td>').join('')+'</tr>'
-    + '<tr><td>SPK</td>'+r.kp.map(v=>'<td>'+v+'</td>').join('')+'</tr></table></div>'
-    + '<p class="dmeta" style="margin-top:8px">Living-donor kidney share 2021&ndash;25: <b>'+Math.round(r.ld5Share*100)+'%</b>'
-    + (r.l5T ? ' &nbsp;&middot;&nbsp; living-donor liver share: <b>'+Math.round(r.ldlt5Share*100)+'%</b>' : '')+'</p></div>';
+    + '<tr><td>SPK</td>'+r.kp.map(v=>'<td>'+v+'</td>').join('')+'</tr></table></div></div>';
   return '<div class="dwrap"><div class="dgrid">'
     + organDetail('Kidney', '--kid', r.kT, r.kL, r.kTrend, r.kPace, 'Living donor')
     + organDetail('Liver', '--liv', r.lT, r.lL, r.lTrend, r.lPace, 'Living donor (LDLT)')
+    + shareDetail(r)
     + pkRow + '</div></div>';
 }
 
