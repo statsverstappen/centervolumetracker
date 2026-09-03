@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>US Transplant Center Volumes</title>
+<style>
+:root{
+--ink:#e7edf1;--mut:#8b98a1;--line:#28323a;--accent:#0f7185;--accent-h:#12839a;
+--band:#161d23;--panel:#13211f;--panelbd:#26473d;--page:#0d1418;--surface:#111a20;
+--kid:#26a0ba;--liv:#c58433;--grow:#3fa873;--decl:#c4695c;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--page);font-size:14px}
+.wrap{max-width:1420px;margin:0 auto;padding:22px 18px 60px}
+h1{font-size:22px;margin:0 0 4px;color:#fff}
+.sub{color:var(--mut);font-size:13px;margin:0 0 14px;line-height:1.5}
+.sub b{color:#cdd8d3;font-weight:600}
+.livechip{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--panelbd);border-radius:999px;padding:3px 10px;font-size:12px;color:#7fd9bd;margin-left:8px;vertical-align:1px;white-space:nowrap}
+.livechip .dot{width:7px;height:7px;border-radius:50%;background:var(--grow)}
+.panel{background:var(--panel);border:1px solid var(--panelbd);border-radius:10px;padding:12px 14px;margin:14px 0 0;font-size:13px;line-height:1.55;color:#cdd8d3}
+.panel b{color:#7fd9bd}
+.leadbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.leadbar .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);color:var(--mut);border:0;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:#fff}
+.seg button:focus-visible{outline:2px solid #7fd9bd;outline-offset:-2px}
+.leaders{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:12px;margin-bottom:14px}
+.lead{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.lead h3{margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.lead h3 .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.lead ol{margin:0;padding:0;list-style:none;font-variant-numeric:tabular-nums}
+.lead li{display:flex;gap:8px;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--line);font-size:13px}
+.lead li:last-child{border-bottom:0}
+.lead .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.lead .nm:hover{color:#7fd9bd}
+.lead .delta{color:var(--grow);font-weight:600;white-space:nowrap}
+.lead .vols{color:var(--mut);font-size:12px;white-space:nowrap}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input[type=search]{padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;width:230px;background:var(--surface);color:var(--ink)}
+input[type=search]::placeholder{color:var(--mut)}
+select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)}
+.ctl{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut);white-space:nowrap}
+.ctl input[type=number]{width:60px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);color:var(--ink)}
+.ctl input[type=checkbox]{accent-color:var(--grow)}
+.count{color:var(--mut);font-size:12px;margin-left:auto}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th.cname,td.cname{text-align:left;white-space:normal;min-width:240px;max-width:340px}
+th.cst,td.cst{text-align:left}
+th{position:sticky;top:0;background:var(--accent);color:#fff;cursor:pointer;user-select:none;font-weight:600;font-size:12px;z-index:2}
+th:hover{background:var(--accent-h)}
+th.nosort{cursor:default}
+th.sorted::after{content:" \25BC";font-size:9px}
+th.asc.sorted::after{content:" \25B2"}
+th.gk{box-shadow:inset 0 3px 0 var(--kid)}
+th.gl{box-shadow:inset 0 3px 0 var(--liv)}
+tbody tr.datarow{background:var(--surface);cursor:pointer}
+tbody tr.datarow.even{background:var(--band)}
+tbody tr.datarow:hover td.cname{color:#7fd9bd}
+tbody tr.grow-row td.cname{box-shadow:inset 3px 0 0 var(--grow)}
+tbody tr.open td{border-bottom:0}
+td{color:var(--ink)}
+td.rk{color:var(--mut);font-size:12px}
+td.dim{color:var(--mut)}
+.big{font-weight:600;color:#fff}
+.ytd{color:var(--mut)}
+.ytd b{color:var(--ink);font-weight:600}
+.ldsub{color:var(--mut);font-size:11px}
+.caret{display:inline-block;width:14px;color:var(--mut);font-size:10px;transition:transform .15s}
+tr.open .caret{transform:rotate(90deg)}
+.badge{display:inline-block;font-size:11px;font-weight:600;border-radius:5px;padding:1px 5px}
+.b-up{color:var(--grow);background:rgba(63,168,115,.12)}
+.b-dn{color:var(--decl);background:rgba(196,105,92,.10)}
+.b-new{color:#7fd9bd;background:rgba(63,168,115,.12)}
+.b-flat{color:var(--mut);background:rgba(139,152,161,.10)}
+.pace-up{color:var(--grow);font-weight:600}
+.pace-dn{color:var(--decl);font-weight:600}
+.pace-ev{color:var(--mut)}
+tr.detail>td{background:#0f1a1f;padding:0;border-bottom:1px solid var(--line);white-space:normal;text-align:left}
+.dwrap{position:sticky;left:0;max-width:calc(100vw - 24px);padding:14px 16px 16px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.dpanel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0;position:relative}
+.dpanel h4{margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);text-align:right}
+.drank{position:absolute;top:9px;left:12px;font-size:14px;font-weight:700;color:#fff;background:rgba(139,152,161,.14);border-radius:6px;padding:2px 8px;line-height:1.4;font-variant-numeric:tabular-nums}
+.drank small{font-weight:600;color:var(--mut);font-size:10px;margin-left:1px}
+.dpanel .drank + h4 + .dmeta{margin-top:14px}
+.dpanel h4 .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.dmeta{font-size:12.5px;color:#cdd8d3;margin:0 0 8px;line-height:1.5}
+.dtblwrap{overflow-x:auto}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;font-variant-numeric:tabular-nums}
+.dtbl th{position:static;background:transparent;color:var(--mut);font-weight:600;font-size:11px;cursor:default;padding:3px 6px;border-bottom:1px solid var(--line);z-index:auto}
+.dtbl th:hover{background:transparent}
+.dtbl td{padding:3px 6px;border-bottom:1px solid var(--line);color:var(--ink);white-space:nowrap}
+.dtbl td:first-child,.dtbl th:first-child{text-align:left;color:var(--mut)}
+.dleg{display:flex;gap:14px;font-size:11px;color:var(--mut);margin-top:4px}
+.dleg span::before{content:"";display:inline-block;width:14px;height:0;border-top:2px solid;margin-right:5px;vertical-align:3px}
+.dleg .lt::before{border-color:var(--c)}
+.dleg .ll::before{border-color:var(--c);border-top-style:dashed}
+.note{font-size:12px;color:var(--mut);margin-top:12px;line-height:1.6}
+.note b{color:#cdd8d3}
+.note a{color:#7fd9bd;text-decoration:none}
+@media (max-width:700px){
+  .wrap{padding:14px 10px 40px}
+  h1{font-size:18px}
+  .livechip{margin-left:0;margin-top:6px;display:inline-flex}
+  .sub{font-size:12.5px}
+  input[type=search]{width:100%}
+  .controls{gap:8px}
+  .count{margin-left:0;width:100%}
+  th,td{padding:5px 7px;font-size:12.5px}
+  th.cname,td.cname{min-width:150px;max-width:190px;position:sticky;left:0;z-index:1;background:inherit}
+  th.cname{z-index:3;background:var(--accent)}
+  tbody tr.datarow td.cname{background:var(--surface)}
+  tbody tr.datarow.even td.cname{background:var(--band)}
+  td.rk,th.rk{display:none}
+  .dwrap{padding:10px 8px 12px;max-width:calc(100vw - 22px)}
+  .dgrid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>US Transplant Center Volumes<span class="livechip"><span class="dot"></span>refreshed monthly</span></h1>
+<p class="sub">All active US abdominal transplant programs, calendar years 2021&ndash;2025 plus <b>2026 year-to-date</b>, split by donor type. OPTN national data as of <b id="asof-label"></b>, covering transplants performed through <b id="thru-label"></b>. <b>Click any center for its five-year trend</b> &mdash; total and living-donor trajectories, growth badges, and 2026 pace. Click column headers to sort.</p>
+<div class="leadbar"><span class="lbl">Growth window</span>
+  <span class="seg" role="group" aria-label="Growth window">
+    <button id="win5" class="on">5-year (2021&ndash;25)</button><button id="win1">1-year (2024&ndash;25)</button><button id="win26">2026 pace (annualized)</button>
+  </span>
+</div>
+<div class="leaders">
+  <div class="lead"><h3><span class="sw" style="background:var(--liv)"></span>Fastest-growing liver programs</h3><ol id="lead-liver"></ol></div>
+  <div class="lead"><h3><span class="sw" style="background:var(--kid)"></span>Fastest-growing kidney programs</h3><ol id="lead-kidney"></ol></div>
+  <div class="lead"><h3><span class="sw" style="background:var(--grow)"></span>Living-donor growth (kidney + liver LD)</h3><ol id="lead-ldgrow"></ol></div>
+  <div class="lead"><h3><span class="sw" style="background:var(--kid)"></span>Highest living-donor kidney share, 2021&ndash;25</h3><ol id="lead-ld"></ol></div>
+  <div class="lead"><h3><span class="sw" style="background:var(--liv)"></span>Highest living-donor liver share, 2021&ndash;25</h3><ol id="lead-ldlt"></ol></div>
+</div>
+<div class="controls">
+  <input type="search" id="q" placeholder="Search center or state&hellip;">
+  <select id="state"><option value="">All states</option></select>
+  <label class="ctl"><input type="checkbox" id="growonly"> growing only</label>
+  <label class="ctl">min abd <input type="number" id="minabd" value="0" min="0" step="10"></label>
+  <span class="count" id="count"></span>
+</div>
+<div class="tblwrap">
+<table id="tbl">
+<thead><tr>
+<th class="rk nosort">Rk</th>
+<th class="cname" data-k="n">Center</th>
+<th class="cst" data-k="s">St</th>
+<th class="gk" data-k="k25" title="Kidney transplants, 2025">K &rsquo;25</th>
+<th class="gk" data-k="kld" title="Living-donor kidney, 2025 (share of kidney)">K LD &rsquo;25</th>
+<th class="gk" data-k="k26" title="Kidney transplants, 2026 year-to-date">K &rsquo;26 YTD</th>
+<th class="gl" data-k="l25" title="Liver transplants, 2025">L &rsquo;25</th>
+<th class="gl" data-k="lld" title="Living-donor liver, 2025">LDLT &rsquo;25</th>
+<th class="gl" data-k="l26" title="Liver transplants, 2026 year-to-date">L &rsquo;26 YTD</th>
+<th data-k="p25" title="Pancreas alone, 2025">P &rsquo;25</th>
+<th data-k="kp25" title="Simultaneous kidney-pancreas, 2025">KP &rsquo;25</th>
+<th data-k="abd" title="Kidney + liver + pancreas + KP, 2025">Abd &rsquo;25</th>
+</tr></thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+<div class="panel"><b>Reading the table.</b> K and L columns show 2025 totals with living-donor counts; <b>&rsquo;26 YTD</b> is the raw year-to-date count as of the data date. A green edge on the center name (and the &ldquo;growing only&rdquo; filter) marks strong growers: 2025 at least 30% above 2021, or a program that effectively started within the window. Click a center to open its trend panel: <span class="badge b-up">&#9650; %</span> 2025 &ge; 15% over 2021 (&ge; 20 cases) &middot; <span class="badge b-dn">&#9660; %</span> &ge; 15% below &middot; <span class="badge b-new">new</span> started within the window; pace <span class="pace-up">&#8599;</span>/<span class="pace-ev">&#8594;</span>/<span class="pace-dn">&#8600;</span> compares annualized 2026 with 2025 at &plusmn;10%.</div>
+<p class="note"><b>Source:</b> OPTN National Data &mdash; <a href="https://hrsa.unos.org/data/view-data-reports/build-advanced/">hrsa.unos.org</a></p>
+</div>
+<script>
+/* ==== OPTN DATA (regenerated monthly - do not hand-edit) ==== */
+const ASOF = "2026-09-01";
+const THRU = "2026-07-31";
+const DATA = [{"c":"ALCH","n":"Children's of Alabama","s":"AL","k":[[11,3],[14,3],[12,4],[20,4],[17,3],[11,4]],"l":[[1,0],[2,0],[7,0],[4,0],[2,0],[3,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ALUA","n":"University of Alabama Hospital","s":"AL","k":[[314,54],[282,51],[254,54],[243,51],[235,49],[199,43]],"l":[[72,0],[83,0],[101,0],[145,0],[153,0],[94,4]],"p":[0,0,0,0,0,0],"kp":[6,9,4,5,8,7]},{"c":"ALVA","n":"Birmingham VA Medical Center","s":"AL","k":[[8,0],[3,0],[6,0],[2,0],[2,0],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ARCH","n":"Arkansas Children's Hospital","s":"AR","k":[[9,1],[5,2],[4,0],[8,1],[3,1],[1,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ARUA","n":"UAMS Medical Center","s":"AR","k":[[184,0],[155,5],[172,9],[144,12],[168,18],[94,14]],"l":[[45,0],[51,0],[52,0],[46,0],[48,0],[33,0]],"p":[0,0,0,0,0,0],"kp":[0,0,1,1,1,1]},{"c":"AZCH","n":"Phoenix Children's Hospital","s":"AZ","k":[[22,9],[10,4],[9,1],[14,6],[17,8],[14,6]],"l":[[6,0],[6,0],[7,0],[5,0],[4,0],[2,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"AZGS","n":"Banner-University Medical Center Phoenix","s":"AZ","k":[[67,13],[90,25],[116,19],[91,20],[82,21],[43,7]],"l":[[61,0],[47,0],[53,0],[59,0],[68,0],[33,0]],"p":[0,0,0,0,0,0],"kp":[1,1,4,1,3,0]},{"c":"AZMC","n":"Mayo Clinic Hospital Arizona","s":"AZ","k":[[455,104],[470,95],[503,121],[501,117],[504,111],[325,71]],"l":[[209,0],[245,0],[284,0],[317,0],[322,0],[174,0]],"p":[0,0,3,1,2,0],"kp":[24,29,22,24,52,23]},{"c":"AZSJ","n":"St. Joseph's Hospital and Medical Center","s":"AZ","k":[[57,9],[68,8],[53,8],[60,12],[49,6],[24,4]],"l":[[29,0],[24,0],[18,0],[22,0],[21,0],[10,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"AZUA","n":"Banner University Medical Center-Tucson","s":"AZ","k":[[86,5],[95,20],[97,20],[64,16],[54,7],[56,9]],"l":[[12,0],[19,0],[12,0],[5,0],[0,0],[0,0]],"p":[2,0,1,0,0,0],"kp":[6,2,5,8,1,2]},{"c":"CACH","n":"Rady Children's Hospital and Health Center","s":"CA","k":[[9,4],[11,4],[9,2],[12,4],[11,4],[3,2]],"l":[[0,0],[0,0],[1,0],[2,0],[7,1],[2,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CACL","n":"Children's Hospital Los Angeles","s":"CA","k":[[22,2],[22,3],[17,1],[19,4],[20,3],[9,0]],"l":[[31,10],[35,10],[31,9],[29,6],[29,1],[15,1]],"p":[0,1,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CACS","n":"Cedars-Sinai Medical Center","s":"CA","k":[[269,46],[286,56],[336,64],[319,68],[323,80],[220,37]],"l":[[113,0],[102,0],[104,0],[136,0],[145,0],[99,0]],"p":[2,0,0,0,1,1],"kp":[11,4,0,5,1,4]},{"c":"CAGH","n":"Scripps Green Hospital","s":"CA","k":[[63,8],[51,15],[62,18],[49,17],[44,17],[40,12]],"l":[[22,0],[24,0],[26,0],[23,0],[12,0],[10,0]],"p":[0,0,0,1,0,1],"kp":[1,1,3,0,1,1]},{"c":"CAIM","n":"University of California Irvine Medical Center","s":"CA","k":[[126,23],[127,16],[134,25],[221,34],[229,23],[132,16]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[5,2,6,1,4,2]},{"c":"CALA","n":"Harbor UCLA Medical Center","s":"CA","k":[[27,0],[36,0],[39,3],[48,0],[52,2],[26,1]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CALL","n":"Loma Linda University Medical Center","s":"CA","k":[[206,41],[258,44],[267,55],[224,45],[230,41],[125,26]],"l":[[107,0],[121,0],[104,0],[106,0],[97,0],[59,0]],"p":[2,5,4,0,1,1],"kp":[19,30,24,16,15,8]},{"c":"CAMB","n":"UCSF Medical Center at Mission Bay","s":"CA","k":[[12,4],[15,3],[16,8],[20,4],[13,4],[8,1]],"l":[[5,0],[10,6],[11,2],[14,6],[10,5],[9,4]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CAPC","n":"Lucile Salter Packard Children's Hospital at Stanford","s":"CA","k":[[26,2],[30,6],[28,6],[42,3],[26,4],[18,5]],"l":[[27,2],[22,3],[25,2],[32,1],[17,0],[15,1]],"p":[1,1,2,0,1,0],"kp":[0,0,0,0,0,0]},{"c":"CAPM","n":"California Pacific Medical Center-Van Ness Campus","s":"CA","k":[[208,44],[214,35],[195,44],[191,33],[209,35],[121,28]],"l":[[63,0],[64,0],[69,0],[89,0],[96,0],[46,0]],"p":[1,0,0,0,0,0],"kp":[14,12,7,12,13,8]},{"c":"CARC","n":"Riverside Community Hospital","s":"CA","k":[[8,0],[27,5],[6,1],[0,0],[0,0],[0,0]],"l":[[0,0],[12,0],[1,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[1,2,0,0,0,0]},{"c":"CASD","n":"University of California San Diego Medical Center","s":"CA","k":[[150,51],[146,43],[178,31],[163,40],[182,40],[102,16]],"l":[[82,1],[69,3],[148,1],[144,0],[175,0],[102,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CASF","n":"University of California San Francisco Medical Center","s":"CA","k":[[389,140],[391,131],[431,117],[364,131],[365,133],[209,64]],"l":[[161,24],[193,26],[190,26],[185,28],[183,29],[113,12]],"p":[0,0,0,3,2,0],"kp":[14,16,8,10,9,5]},{"c":"CASH","n":"Sharp Memorial Hospital","s":"CA","k":[[85,26],[106,37],[83,26],[101,31],[111,37],[44,17]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[1,0,0,1,0,0],"kp":[3,2,4,0,1,0]},{"c":"CASJ","n":"Saint Joseph Hospital","s":"CA","k":[[41,1],[61,4],[95,1],[108,4],[82,13],[56,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,1,3,1]},{"c":"CASM","n":"University of California Davis Medical Center","s":"CA","k":[[282,40],[245,38],[310,56],[310,90],[270,75],[154,53]],"l":[[0,0],[0,0],[15,0],[44,0],[59,1],[46,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CASU","n":"Stanford Health Care","s":"CA","k":[[154,35],[164,30],[189,58],[166,52],[161,51],[89,28]],"l":[[103,3],[125,1],[135,1],[136,2],[156,1],[68,0]],"p":[1,1,1,0,0,0],"kp":[2,2,2,0,1,3]},{"c":"CAUC","n":"University of California at Los Angeles Medical Center","s":"CA","k":[[418,103],[385,120],[355,125],[383,124],[387,88],[219,71]],"l":[[148,0],[156,0],[203,0],[178,0],[144,0],[99,0]],"p":[1,0,0,3,1,2],"kp":[3,0,1,0,0,0]},{"c":"CAUH","n":"Keck Hospital of USC","s":"CA","k":[[207,39],[211,36],[212,40],[177,40],[177,21],[94,21]],"l":[[172,26],[151,24],[139,32],[125,14],[133,8],[74,3]],"p":[0,0,0,1,0,0],"kp":[2,2,2,4,1,3]},{"c":"COCH","n":"Children's Hospital Colorado","s":"CO","k":[[21,10],[15,6],[21,7],[19,7],[11,4],[10,4]],"l":[[20,12],[15,8],[15,6],[22,8],[15,8],[13,11]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"COPM","n":"AdventHealth Porter","s":"CO","k":[[43,25],[91,54],[90,43],[114,54],[120,45],[87,39]],"l":[[12,0],[5,0],[3,0],[8,0],[29,0],[15,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"COSL","n":"Presbyterian/St Luke's Medical Center","s":"CO","k":[[55,19],[62,16],[54,14],[64,13],[56,12],[18,6]],"l":[[23,0],[26,0],[24,0],[18,0],[38,0],[29,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"COUC","n":"University of Colorado Hospital/Health Science Center","s":"CO","k":[[246,70],[303,72],[292,78],[254,77],[238,69],[143,49]],"l":[[109,10],[130,15],[141,17],[148,14],[148,11],[86,9]],"p":[0,1,1,0,0,0],"kp":[5,6,5,2,6,2]},{"c":"CTHH","n":"Hartford Hospital","s":"CT","k":[[116,50],[128,51],[143,45],[115,45],[103,44],[56,28]],"l":[[28,0],[31,0],[35,0],[35,0],[30,0],[23,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"CTYN","n":"Yale New Haven Hospital","s":"CT","k":[[121,27],[131,32],[126,43],[106,36],[114,32],[60,21]],"l":[[26,2],[33,5],[29,3],[16,4],[40,0],[28,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"DCCH","n":"Children's National Medical Center","s":"DC","k":[[13,4],[20,3],[14,5],[13,10],[9,7],[8,6]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"DCGU","n":"Medstar Georgetown Transplant Institute","s":"DC","k":[[246,96],[222,77],[262,70],[355,70],[369,54],[231,44]],"l":[[130,12],[121,7],[124,11],[135,9],[151,26],[88,15]],"p":[6,4,4,8,8,4],"kp":[17,3,13,42,38,22]},{"c":"DCGW","n":"George Washington University Hospital","s":"DC","k":[[65,14],[45,9],[60,11],[52,19],[52,11],[30,8]],"l":[[0,0],[15,0],[22,0],[16,0],[23,0],[14,0]],"p":[0,0,0,0,0,0],"kp":[0,0,1,5,1,0]},{"c":"DCWH","n":"Washington Hospital Center","s":"DC","k":[[0,0],[0,0],[0,0],[5,0],[1,0],[4,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"DCWR","n":"Walter Reed National Military Medical Center at Bethesda","s":"DC","k":[[45,13],[53,16],[41,5],[36,10],[30,11],[23,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"DEAI","n":"Nemours Children's Hospital Delaware","s":"DE","k":[[9,3],[3,1],[8,4],[8,1],[3,0],[6,1]],"l":[[9,3],[8,0],[3,0],[3,0],[3,0],[3,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"DECC","n":"Christiana Care Health Services","s":"DE","k":[[23,5],[29,6],[42,8],[45,7],[53,7],[27,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"FLBC","n":"Broward Health Medical Center","s":"FL","k":[[19,0],[12,0],[0,0],[0,0],[0,0],[0,0]],"l":[[15,0],[13,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"FLCC","n":"Cleveland Clinic Florida Weston","s":"FL","k":[[156,22],[142,23],[151,20],[132,15],[145,21],[95,14]],"l":[[28,4],[39,5],[52,4],[79,4],[93,4],[77,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"FLFH","n":"AdventHealth Orlando","s":"FL","k":[[117,22],[107,24],[126,25],[105,24],[161,27],[86,20]],"l":[[66,0],[49,0],[71,0],[74,0],[116,0],[74,4]],"p":[1,0,0,0,0,0],"kp":[8,6,13,4,12,5]},{"c":"FLHM","n":"Halifax Health","s":"FL","k":[[20,1],[13,1],[12,2],[3,1],[9,1],[6,1]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"FLJM","n":"Jackson Memorial Hospital University of Miami School of Medicine","s":"FL","k":[[367,47],[430,50],[337,53],[276,46],[285,42],[141,55]],"l":[[170,0],[148,0],[169,0],[121,0],[110,0],[51,0]],"p":[10,8,9,10,9,5],"kp":[12,32,32,19,17,8]},{"c":"FLLM","n":"Largo Medical Center","s":"FL","k":[[45,5],[77,8],[74,15],[88,25],[64,20],[33,10]],"l":[[8,0],[21,0],[26,0],[35,0],[55,0],[41,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"FLMR","n":"Memorial Regional Hospital","s":"FL","k":[[37,6],[124,17],[146,33],[202,37],[181,42],[90,29]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,4,2,1]},{"c":"FLSH","n":"Ascension Sacred Heart Pensacola","s":"FL","k":[[13,0],[39,0],[25,4],[16,1],[33,6],[21,6]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"FLSL","n":"Mayo Clinic Hospital Florida","s":"FL","k":[[226,48],[225,66],[207,68],[221,80],[220,74],[130,47]],"l":[[149,0],[144,0],[176,0],[170,1],[160,0],[104,1]],"p":[3,2,0,1,2,0],"kp":[9,10,4,3,7,1]},{"c":"FLTG","n":"Tampa General Hospital","s":"FL","k":[[330,65],[404,74],[459,96],[500,110],[519,123],[315,60]],"l":[[149,0],[167,0],[209,5],[279,5],[284,12],[159,3]],"p":[0,0,0,0,0,1],"kp":[10,9,9,14,8,6]},{"c":"FLUF","n":"UF Health Shands Hospital","s":"FL","k":[[184,11],[221,18],[230,20],[138,22],[158,12],[94,7]],"l":[[158,0],[101,0],[191,0],[142,0],[146,0],[133,0]],"p":[0,0,0,0,0,0],"kp":[7,18,10,9,12,6]},{"c":"GAEH","n":"Children\u2019s Healthcare of Atlanta - Arthur M. Blank Hospital","s":"GA","k":[[24,13],[15,8],[24,13],[21,10],[25,11],[21,12]],"l":[[25,3],[19,0],[6,0],[0,0],[22,1],[9,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"GAEM","n":"Emory University Hospital","s":"GA","k":[[371,92],[372,95],[354,84],[410,126],[591,189],[384,123]],"l":[[132,1],[93,1],[104,0],[167,0],[192,1],[133,1]],"p":[0,1,0,0,0,0],"kp":[12,6,11,7,13,5]},{"c":"GAMC","n":"Wellstar MCG Health, affiliated with Medical College of Georgia","s":"GA","k":[[59,2],[88,1],[90,2],[100,1],[58,1],[52,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[1,0,0,0,2,1]},{"c":"GAPH","n":"Piedmont Hospital","s":"GA","k":[[380,69],[333,53],[343,71],[363,80],[335,80],[209,50]],"l":[[143,0],[154,0],[140,0],[175,0],[199,0],[118,1]],"p":[0,1,0,1,0,0],"kp":[14,12,15,10,8,3]},{"c":"HIQM","n":"The Queen's Medical Center","s":"HI","k":[[46,5],[63,1],[43,1],[70,7],[86,4],[27,10]],"l":[[17,0],[18,0],[17,0],[23,0],[30,0],[10,0]],"p":[0,0,0,0,0,0],"kp":[1,0,0,1,0,2]},{"c":"IAIM","n":"Iowa Methodist Medical Center","s":"IA","k":[[86,5],[78,10],[71,16],[90,15],[47,11],[28,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"IAIV","n":"University of Iowa Hospitals and Clinics Transplant Programs","s":"IA","k":[[111,48],[95,36],[112,46],[78,40],[79,28],[32,13]],"l":[[19,1],[22,0],[16,1],[9,0],[14,0],[6,0]],"p":[0,0,1,1,1,1],"kp":[10,6,8,5,2,1]},{"c":"IAVA","n":"The Iowa City VA Health Care System","s":"IA","k":[[17,2],[7,1],[9,0],[11,0],[5,0],[4,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ILCH","n":"Advocate Christ Medical Center","s":"IL","k":[[35,12],[28,7],[17,4],[44,2],[34,2],[23,5]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ILCM","n":"Ann & Robert H. Lurie Children's Hospital of Chicago","s":"IL","k":[[33,13],[26,8],[26,12],[44,11],[33,12],[16,4]],"l":[[11,4],[12,2],[16,3],[13,4],[19,1],[9,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ILLU","n":"Loyola University Medical Center","s":"IL","k":[[200,42],[212,39],[249,51],[265,50],[217,58],[88,29]],"l":[[68,0],[80,0],[76,0],[62,0],[85,0],[32,0]],"p":[0,0,1,0,1,0],"kp":[9,8,9,9,5,2]},{"c":"ILMM","n":"Springfield Memorial Hospital","s":"IL","k":[[24,5],[26,6],[32,2],[25,5],[21,2],[14,1]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ILNM","n":"Northwestern Memorial Hospital","s":"IL","k":[[279,99],[309,85],[347,91],[343,97],[333,76],[228,66]],"l":[[109,11],[107,7],[138,13],[138,17],[178,23],[88,12]],"p":[3,1,1,3,4,1],"kp":[16,23,32,14,17,11]},{"c":"ILPL","n":"Rush University Medical Center","s":"IL","k":[[101,26],[134,20],[147,18],[130,22],[120,21],[69,15]],"l":[[38,0],[41,0],[51,0],[65,0],[62,0],[48,0]],"p":[1,0,0,1,0,2],"kp":[11,4,7,2,3,3]},{"c":"ILSF","n":"OSF Saint Francis Medical Center","s":"IL","k":[[55,23],[59,11],[48,14],[44,6],[52,15],[22,6]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[1,0,0,0,0,0],"kp":[4,3,0,2,1,0]},{"c":"ILUC","n":"University of Chicago Medical Center","s":"IL","k":[[164,27],[140,24],[167,31],[226,49],[197,32],[142,26]],"l":[[76,9],[81,14],[93,10],[103,8],[88,11],[81,9]],"p":[1,3,1,0,2,0],"kp":[10,12,11,19,13,6]},{"c":"ILUI","n":"University of Illinois Medical Center","s":"IL","k":[[274,73],[265,64],[265,56],[267,54],[239,62],[123,36]],"l":[[56,1],[51,3],[59,8],[63,3],[48,6],[29,1]],"p":[2,2,3,4,1,0],"kp":[34,29,41,29,22,13]},{"c":"ILVA","n":"Edward Hines Jr. Veterans Administration Medical Center","s":"IL","k":[[36,0],[64,3],[110,3],[68,3],[108,3],[65,1]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"INIM","n":"Indiana University Health","s":"IN","k":[[279,54],[223,46],[205,37],[241,52],[189,45],[114,38]],"l":[[168,12],[160,8],[189,7],[215,7],[193,9],[116,5]],"p":[10,8,7,10,8,2],"kp":[17,14,25,21,19,15]},{"c":"INSV","n":"Ascension St. Vincent Hospital","s":"IN","k":[[72,8],[80,8],[75,16],[87,21],[69,14],[38,9]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"KSUK","n":"University of Kansas Hospital","s":"KS","k":[[186,33],[177,21],[154,36],[206,31],[169,38],[81,18]],"l":[[50,0],[54,0],[51,0],[58,1],[60,2],[46,2]],"p":[0,0,0,0,0,0],"kp":[10,6,10,3,4,5]},{"c":"KYJH","n":"Jewish Hospital","s":"KY","k":[[62,17],[62,9],[78,27],[78,16],[89,15],[55,12]],"l":[[22,0],[15,0],[22,0],[16,0],[11,0],[0,0]],"p":[0,0,0,0,1,0],"kp":[4,3,3,4,4,4]},{"c":"KYKC","n":"Norton Children's Hospital","s":"KY","k":[[4,0],[1,0],[2,0],[3,0],[6,2],[4,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"KYUK","n":"University of Kentucky Medical Center","s":"KY","k":[[97,36],[114,47],[127,40],[116,45],[119,38],[85,24]],"l":[[71,0],[66,0],[68,0],[78,0],[80,0],[51,0]],"p":[0,0,0,0,0,0],"kp":[2,4,0,0,1,1]},{"c":"LACH","n":"Children's Hospital","s":"LA","k":[[17,3],[13,4],[15,4],[11,1],[12,1],[13,1]],"l":[[1,0],[0,0],[0,0],[3,0],[0,0],[2,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"LAOF","n":"Ochsner Foundation Hospital","s":"LA","k":[[184,35],[204,50],[187,40],[197,55],[197,50],[110,37]],"l":[[146,1],[134,6],[120,8],[123,10],[142,9],[91,6]],"p":[0,0,0,1,0,0],"kp":[13,10,13,10,11,11]},{"c":"LATU","n":"Tulane Medical Center","s":"LA","k":[[121,40],[123,25],[136,38],[121,22],[150,25],[95,15]],"l":[[17,0],[14,0],[13,0],[19,0],[35,0],[29,0]],"p":[0,0,0,0,1,0],"kp":[11,4,8,5,5,2]},{"c":"LAWK","n":"Willis-Knighton Medical Center","s":"LA","k":[[48,10],[43,4],[54,9],[73,6],[71,6],[20,1]],"l":[[14,0],[10,0],[9,0],[13,0],[12,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[8,17,13,4,9,1]},{"c":"MABI","n":"Beth Israel Deaconess Medical Center","s":"MA","k":[[53,13],[98,18],[82,15],[73,19],[80,24],[49,21]],"l":[[47,0],[79,1],[113,1],[125,2],[121,10],[54,7]],"p":[0,0,4,0,4,1],"kp":[4,8,5,11,7,5]},{"c":"MABS","n":"Baystate Medical Center","s":"MA","k":[[51,17],[49,12],[72,17],[80,14],[33,5],[17,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MABU","n":"Boston Medical Center","s":"MA","k":[[35,7],[23,4],[19,3],[66,6],[29,8],[11,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MACH","n":"Boston Children's Hospital","s":"MA","k":[[27,12],[14,4],[27,8],[26,8],[25,10],[10,4]],"l":[[12,0],[12,4],[24,5],[12,4],[14,4],[9,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MALC","n":"Lahey Clinic Medical Center","s":"MA","k":[[40,10],[66,18],[57,22],[66,27],[64,16],[31,6]],"l":[[78,18],[70,17],[109,7],[128,7],[107,3],[79,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MAMG","n":"Massachusetts General Hospital","s":"MA","k":[[164,67],[147,40],[181,63],[223,75],[238,81],[125,44]],"l":[[86,0],[95,2],[84,7],[78,0],[210,10],[112,11]],"p":[1,0,0,0,0,1],"kp":[1,0,1,0,0,0]},{"c":"MANM","n":"Tufts Medical Center","s":"MA","k":[[37,20],[69,28],[52,12],[51,20],[68,17],[34,9]],"l":[[0,0],[0,0],[5,0],[20,0],[47,0],[46,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MAPB","n":"Brigham and Women's Hospital","s":"MA","k":[[65,25],[76,39],[62,41],[53,26],[71,32],[34,13]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,2],"kp":[2,0,1,1,0,2]},{"c":"MAUM","n":"UMass Memorial Medical Center","s":"MA","k":[[58,15],[67,2],[59,12],[72,11],[102,11],[48,10]],"l":[[62,5],[51,0],[55,0],[59,0],[63,0],[39,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MDJH","n":"Johns Hopkins Hospital","s":"MD","k":[[249,38],[242,54],[239,40],[202,35],[225,46],[130,30]],"l":[[138,19],[130,22],[122,26],[115,18],[127,20],[69,17]],"p":[0,1,0,0,0,1],"kp":[5,3,10,5,3,3]},{"c":"MDUM","n":"University of Maryland Medical System","s":"MD","k":[[168,32],[162,39],[146,41],[152,39],[126,34],[82,24]],"l":[[97,5],[105,7],[91,8],[84,3],[84,3],[43,2]],"p":[3,0,0,0,1,0],"kp":[19,7,11,12,10,7]},{"c":"MEMC","n":"Maine Medical Center","s":"ME","k":[[51,24],[45,22],[41,20],[31,10],[34,14],[27,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MIBH","n":"Corewell Health William Beaumont University Hospital","s":"MI","k":[[75,11],[81,16],[91,20],[80,9],[88,24],[54,12]],"l":[[32,0],[41,0],[44,0],[31,0],[45,0],[26,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MICH","n":"Children's Hospital of Michigan","s":"MI","k":[[4,0],[8,0],[8,3],[8,1],[6,1],[6,1]],"l":[[1,0],[2,0],[2,0],[2,0],[6,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MIDV","n":"Corewell Health Helen DeVos Children's Hospital","s":"MI","k":[[6,1],[6,2],[9,4],[3,1],[7,4],[5,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MIHF","n":"Henry Ford Hospital","s":"MI","k":[[81,25],[114,24],[131,35],[137,27],[144,33],[105,30]],"l":[[102,6],[104,6],[125,8],[121,9],[175,8],[125,4]],"p":[1,3,2,2,2,1],"kp":[1,1,1,0,1,2]},{"c":"MIHH","n":"Harper University Hospital Detroit Medical Center","s":"MI","k":[[10,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MISJ","n":"Ascension St. John Hospital","s":"MI","k":[[26,7],[35,3],[28,2],[30,6],[29,3],[17,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MISM","n":"Mercy Health Saint Mary's","s":"MI","k":[[90,34],[102,37],[96,31],[109,35],[109,41],[55,18]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MIUM","n":"University of Michigan Medical Center","s":"MI","k":[[222,54],[235,54],[321,54],[265,53],[273,58],[169,39]],"l":[[86,3],[82,2],[100,7],[131,4],[140,5],[92,6]],"p":[0,0,0,0,2,0],"kp":[4,1,1,5,8,3]},{"c":"MNAN","n":"Abbott Northwestern Hospital","s":"MN","k":[[19,7],[37,6],[40,9],[32,6],[12,2],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MNHC","n":"Hennepin County Medical Center","s":"MN","k":[[53,8],[58,10],[61,9],[49,7],[49,11],[30,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MNMC","n":"Mayo Clinic Hospital Minnesota","s":"MN","k":[[270,152],[304,147],[290,174],[272,144],[309,162],[157,76]],"l":[[124,9],[130,9],[141,10],[139,10],[163,17],[98,13]],"p":[9,2,4,0,3,0],"kp":[9,7,8,9,10,7]},{"c":"MNUM","n":"University of Minnesota Medical Center, Fairview","s":"MN","k":[[199,88],[202,97],[221,107],[216,92],[208,53],[123,35]],"l":[[116,5],[113,1],[139,3],[132,1],[134,1],[85,0]],"p":[4,5,3,2,3,1],"kp":[24,21,26,19,17,11]},{"c":"MOBH","n":"Barnes-Jewish Hospital","s":"MO","k":[[274,62],[315,70],[322,70],[334,68],[329,53],[207,44]],"l":[[151,0],[135,1],[130,0],[164,1],[148,2],[106,0]],"p":[4,0,1,0,2,0],"kp":[12,3,12,12,3,5]},{"c":"MOCG","n":"Cardinal Glennon Children's Hospital","s":"MO","k":[[10,1],[3,1],[8,1],[5,1],[7,1],[3,1]],"l":[[0,0],[2,0],[1,0],[4,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MOCH","n":"St. Louis Children's Hospital at Washington University Medical Center","s":"MO","k":[[12,5],[9,4],[11,2],[11,4],[9,1],[6,1]],"l":[[17,0],[23,0],[12,0],[12,3],[23,4],[8,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MOCM","n":"Children's Mercy Hospital","s":"MO","k":[[12,7],[14,6],[16,3],[14,5],[7,2],[14,4]],"l":[[0,0],[19,0],[21,0],[13,0],[9,0],[7,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MOLH","n":"St Luke's Hospital of Kansas City","s":"MO","k":[[125,10],[107,2],[74,3],[77,5],[70,8],[44,8]],"l":[[27,0],[18,0],[23,0],[18,0],[24,0],[15,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MORH","n":"Research Medical Center","s":"MO","k":[[55,6],[58,10],[66,10],[96,25],[75,10],[38,8]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[2,0,2,2,2,1]},{"c":"MOSL","n":"SSM Health Saint Louis University Hospital","s":"MO","k":[[49,10],[49,15],[51,11],[67,16],[82,26],[31,15]],"l":[[27,0],[42,0],[26,0],[42,0],[37,0],[21,0]],"p":[0,0,0,0,0,0],"kp":[0,0,1,2,0,0]},{"c":"MOUM","n":"University of Missouri Hospital and Clinics","s":"MO","k":[[8,5],[15,3],[12,5],[12,4],[15,3],[15,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"MSUM","n":"University of Mississippi Medical Center","s":"MS","k":[[139,11],[132,16],[152,18],[135,14],[135,18],[95,7]],"l":[[48,0],[50,0],[45,0],[62,0],[37,0],[32,0]],"p":[0,0,0,0,0,0],"kp":[5,5,8,4,5,3]},{"c":"NCBG","n":"Wake Forest Baptist Medical Center","s":"NC","k":[[207,33],[249,47],[220,36],[168,29],[173,29],[86,17]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[2,1,0,0,1,0],"kp":[21,12,7,11,8,6]},{"c":"NCCM","n":"Carolinas Medical Center","s":"NC","k":[[83,23],[97,16],[172,24],[142,21],[141,20],[77,5]],"l":[[80,0],[80,0],[86,0],[116,0],[135,0],[90,0]],"p":[0,0,0,0,0,0],"kp":[4,3,3,2,1,2]},{"c":"NCDU","n":"Duke University Hospital","s":"NC","k":[[234,49],[190,36],[204,42],[211,52],[236,84],[148,50]],"l":[[122,9],[123,6],[165,7],[172,6],[200,4],[137,0]],"p":[2,1,1,4,2,0],"kp":[13,13,10,9,13,6]},{"c":"NCEC","n":"ECU Health Medical Center","s":"NC","k":[[77,10],[107,22],[130,12],[150,19],[101,20],[60,11]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,1,0,0,0],"kp":[9,7,6,1,4,1]},{"c":"NCMH","n":"University of North Carolina Hospitals","s":"NC","k":[[152,40],[151,34],[154,30],[163,19],[199,32],[103,22]],"l":[[35,0],[25,0],[40,6],[44,5],[50,5],[31,4]],"p":[0,0,0,0,0,0],"kp":[2,3,1,0,1,1]},{"c":"NDMC","n":"Sanford Bismarck Medical Center","s":"ND","k":[[17,4],[16,3],[17,6],[17,3],[10,2],[17,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NDSL","n":"Sanford Medical Center Fargo","s":"ND","k":[[28,6],[31,13],[45,9],[39,7],[35,4],[27,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NEUN","n":"The Nebraska Medical Center","s":"NE","k":[[155,32],[144,46],[170,33],[186,58],[184,60],[106,20]],"l":[[107,3],[110,1],[133,1],[150,1],[166,3],[128,1]],"p":[5,4,5,5,6,2],"kp":[0,1,2,2,2,0]},{"c":"NHDH","n":"Mary Hitchcock Memorial Hospital","s":"NH","k":[[25,16],[23,12],[27,15],[19,7],[26,12],[15,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NJBI","n":"Newark Beth Israel Medical Center","s":"NJ","k":[[0,0],[1,0],[1,0],[0,0],[2,0],[1,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NJHK","n":"Hackensack University Medical Center","s":"NJ","k":[[117,65],[242,63],[326,54],[339,40],[296,58],[160,30]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,3,0,1,2,1],"kp":[0,0,6,6,6,8]},{"c":"NJLL","n":"Virtua Our Lady of Lourdes Hospital","s":"NJ","k":[[46,2],[61,5],[75,13],[95,8],[101,9],[54,3]],"l":[[18,0],[19,0],[34,0],[42,0],[34,0],[28,0]],"p":[0,0,0,0,0,0],"kp":[6,3,10,2,4,0]},{"c":"NJRW","n":"Robert Wood Johnson University Hospital","s":"NJ","k":[[68,22],[60,17],[75,21],[71,19],[85,14],[47,12]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,1],"kp":[14,11,12,12,16,12]},{"c":"NJSB","n":"Saint Barnabas Medical Center","s":"NJ","k":[[345,131],[346,125],[393,107],[382,77],[370,79],[196,45]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[1,1,0,1,0,0],"kp":[2,2,3,8,4,1]},{"c":"NJUH","n":"University Hospital","s":"NJ","k":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"l":[[41,0],[37,0],[46,0],[52,0],[38,0],[25,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NMAQ","n":"University Hospital, University of New Mexico Health Sciences Center","s":"NM","k":[[54,5],[51,6],[56,4],[49,3],[29,4],[28,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NMPH","n":"Presbyterian Hospital","s":"NM","k":[[41,6],[40,9],[52,10],[36,9],[33,8],[22,9]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,1,1,1,3,1]},{"c":"NVRR","n":"Renown Regional Medical Center","s":"NV","k":[[0,0],[0,0],[0,0],[0,0],[3,3],[2,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NVUM","n":"University Medical Center of Southern Nevada","s":"NV","k":[[138,6],[141,7],[172,4],[182,7],[179,6],[90,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,1,2,0,0],"kp":[0,0,3,4,6,4]},{"c":"NYAM","n":"Albany Medical Center Hospital","s":"NY","k":[[29,2],[35,6],[34,1],[34,4],[39,9],[25,5]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[1,0,0,0,0,0],"kp":[0,1,0,0,0,0]},{"c":"NYCC","n":"Long Island Jewish Medical Center-Cohen Children's Medical Center","s":"NY","k":[[8,3],[7,1],[7,1],[10,3],[15,6],[3,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NYCP","n":"NY Presbyterian Hospital/Columbia Univ. Medical Center","s":"NY","k":[[208,90],[190,89],[227,93],[223,88],[218,86],[131,55]],"l":[[114,13],[123,18],[139,21],[149,29],[148,55],[104,46]],"p":[5,4,5,5,2,0],"kp":[7,10,9,3,5,0]},{"c":"NYDS","n":"State University of New York, Downstate Medical Center","s":"NY","k":[[43,0],[61,3],[60,0],[44,1],[36,0],[15,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NYEC","n":"Erie County Medical Center","s":"NY","k":[[139,7],[141,16],[141,12],[137,10],[111,9],[47,5]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[1,0,0,0,0,0],"kp":[7,7,10,6,5,1]},{"c":"NYFL","n":"Strong Memorial Hospital, University of Rochester Medical Center","s":"NY","k":[[104,41],[104,28],[104,29],[93,34],[128,48],[75,20]],"l":[[91,12],[75,9],[65,14],[72,14],[88,16],[55,9]],"p":[1,1,2,1,0,0],"kp":[0,0,1,2,1,1]},{"c":"NYMA","n":"Montefiore Medical Center","s":"NY","k":[[171,43],[199,28],[247,18],[221,23],[220,28],[123,7]],"l":[[51,2],[66,6],[44,5],[42,3],[46,1],[26,1]],"p":[1,0,0,0,0,0],"kp":[26,20,11,5,5,1]},{"c":"NYMS","n":"Mount Sinai Medical Center","s":"NY","k":[[300,68],[279,80],[276,67],[260,73],[282,73],[145,27]],"l":[[174,7],[195,13],[178,10],[178,7],[173,8],[96,1]],"p":[1,3,3,4,6,5],"kp":[5,1,11,3,7,4]},{"c":"NYNS","n":"North Shore University Hospital/Northwell Health","s":"NY","k":[[119,42],[134,33],[195,55],[207,65],[211,51],[115,31]],"l":[[8,0],[65,0],[116,0],[107,0],[151,2],[110,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,2]},{"c":"NYNY","n":"New York-Presbyterian Hospital/Weill Cornell Medical Center","s":"NY","k":[[265,105],[236,108],[280,105],[317,94],[243,83],[128,54]],"l":[[59,13],[58,6],[77,12],[83,6],[88,21],[60,20]],"p":[2,0,0,0,0,0],"kp":[8,3,2,3,4,2]},{"c":"NYSB","n":"University Hospital of State University of New York at Stony Brook","s":"NY","k":[[89,19],[73,15],[64,14],[61,15],[61,14],[44,17]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NYUC","n":"NYU Langone Health","s":"NY","k":[[311,90],[335,62],[329,81],[338,96],[312,76],[176,54]],"l":[[52,7],[100,2],[93,4],[127,8],[123,7],[73,5]],"p":[0,0,0,0,1,0],"kp":[10,5,2,1,2,2]},{"c":"NYUM","n":"State University of New York Upstate Medical University","s":"NY","k":[[86,25],[97,16],[94,31],[77,22],[65,12],[45,11]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[2,4,0,0,0,0],"kp":[4,4,0,0,2,0]},{"c":"NYVA","n":"James J. Peters VA Medical Center","s":"NY","k":[[20,2],[11,3],[15,2],[11,1],[16,2],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"NYWC","n":"Westchester Medical Center","s":"NY","k":[[69,8],[86,18],[66,9],[93,14],[80,15],[45,6]],"l":[[83,0],[68,0],[64,0],[70,0],[86,0],[64,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"OHCC","n":"The Cleveland Clinic Foundation","s":"OH","k":[[298,58],[320,45],[326,46],[354,50],[358,74],[203,53]],"l":[[210,33],[215,29],[235,19],[261,13],[290,24],[167,10]],"p":[6,3,4,3,1,1],"kp":[8,10,5,3,5,5]},{"c":"OHCH","n":"Nationwide Children's Hospital","s":"OH","k":[[4,1],[12,3],[11,2],[15,3],[16,4],[9,1]],"l":[[3,0],[5,0],[7,0],[3,0],[11,0],[8,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"OHCM","n":"Children's Hospital Medical Center","s":"OH","k":[[34,7],[24,10],[23,10],[29,12],[32,12],[14,7]],"l":[[29,0],[15,0],[24,1],[24,1],[21,2],[8,2]],"p":[2,2,2,0,1,0],"kp":[0,1,0,0,1,0]},{"c":"OHCO","n":"University of Toledo Medical Center","s":"OH","k":[[174,9],[200,7],[203,8],[191,5],[193,6],[96,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,2,2]},{"c":"OHOU","n":"Ohio State University Medical Center","s":"OH","k":[[330,76],[263,80],[292,76],[296,76],[325,87],[192,35]],"l":[[138,2],[150,5],[184,4],[194,1],[172,0],[103,1]],"p":[0,1,0,1,1,0],"kp":[13,12,12,6,10,4]},{"c":"OHTC","n":"The Christ Hospital","s":"OH","k":[[60,21],[63,35],[73,31],[62,36],[61,25],[64,18]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"OHUC","n":"University of Cincinnati  Medical Center","s":"OH","k":[[179,40],[233,31],[210,25],[198,23],[124,23],[75,15]],"l":[[148,4],[142,2],[181,5],[158,7],[145,5],[102,3]],"p":[1,1,1,1,0,0],"kp":[4,7,6,7,12,1]},{"c":"OHUH","n":"University Hospitals of Cleveland","s":"OH","k":[[135,28],[94,15],[191,19],[148,16],[178,19],[99,11]],"l":[[20,0],[13,0],[26,0],[65,0],[74,0],[34,0]],"p":[0,0,1,0,0,1],"kp":[4,0,1,2,6,2]},{"c":"OKBC","n":"Integris Baptist Medical Center","s":"OK","k":[[78,16],[86,16],[104,16],[115,21],[91,23],[51,11]],"l":[[86,0],[93,0],[111,0],[104,0],[89,0],[39,0]],"p":[0,0,0,0,0,0],"kp":[4,4,4,7,5,1]},{"c":"OKMD","n":"OU Medical Center","s":"OK","k":[[36,7],[43,7],[43,6],[42,3],[47,6],[39,4]],"l":[[39,0],[50,0],[52,0],[38,0],[30,0],[11,0]],"p":[0,0,0,0,0,0],"kp":[3,4,1,4,0,0]},{"c":"OKSJ","n":"St John Medical Center","s":"OK","k":[[52,8],[55,9],[50,20],[44,16],[49,15],[37,7]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ORGS","n":"Legacy Good Samaritan Hospital and Medical Center","s":"OR","k":[[89,39],[93,21],[116,22],[77,20],[96,22],[58,23]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"ORUO","n":"Oregon Health and Science University","s":"OR","k":[[152,28],[141,18],[178,18],[131,18],[132,28],[89,18]],"l":[[63,0],[58,0],[90,0],[91,0],[92,0],[66,0]],"p":[0,0,0,0,0,0],"kp":[4,9,7,6,5,5]},{"c":"ORVA","n":"VA Portland Health Care System","s":"OR","k":[[38,4],[57,2],[80,3],[54,0],[47,0],[41,4]],"l":[[20,0],[16,0],[17,0],[15,0],[18,0],[8,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PAAE","n":"Albert Einstein Medical Center","s":"PA","k":[[45,4],[91,5],[77,4],[77,5],[56,4],[34,0]],"l":[[58,0],[61,0],[66,0],[76,0],[80,0],[49,0]],"p":[0,2,0,1,0,1],"kp":[1,6,2,1,1,1]},{"c":"PAAG","n":"Allegheny General Hospital","s":"PA","k":[[101,16],[98,29],[88,23],[105,25],[95,21],[56,13]],"l":[[44,2],[42,2],[61,4],[72,1],[63,1],[42,1]],"p":[0,1,0,0,0,1],"kp":[1,0,2,2,1,2]},{"c":"PACC","n":"Crozer-Chester Medical Center","s":"PA","k":[[12,1],[12,1],[1,0],[0,0],[0,0],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PACH","n":"UPMC Children's Hospital of Pittsburgh","s":"PA","k":[[19,12],[21,7],[14,7],[16,8],[15,11],[12,8]],"l":[[28,4],[26,9],[29,8],[28,11],[29,7],[20,3]],"p":[3,0,0,4,1,2],"kp":[0,0,0,1,0,0]},{"c":"PACP","n":"Children's Hospital of Philadelphia","s":"PA","k":[[18,5],[15,8],[24,12],[24,8],[23,9],[14,2]],"l":[[16,1],[12,1],[15,1],[23,5],[13,4],[14,1]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PAGM","n":"Geisinger Medical Center","s":"PA","k":[[42,15],[66,16],[53,23],[61,17],[69,20],[28,8]],"l":[[8,0],[13,0],[11,0],[19,0],[28,0],[14,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PAHE","n":"Penn State Milton S Hershey Medical Center","s":"PA","k":[[25,17],[24,5],[1,1],[5,0],[0,0],[0,0]],"l":[[11,0],[7,0],[7,0],[5,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PAHH","n":"Pinnacle Health System at Harrisburg Hospital","s":"PA","k":[[41,14],[66,27],[61,25],[83,39],[84,44],[37,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PALH","n":"The Lankenau Hospital","s":"PA","k":[[13,3],[8,1],[6,2],[0,0],[0,0],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PALV","n":"Lehigh Valley Hospital","s":"PA","k":[[94,10],[79,13],[114,32],[150,41],[140,34],[94,23]],"l":[[0,0],[0,0],[0,0],[0,0],[23,0],[14,0]],"p":[0,0,1,0,0,1],"kp":[3,3,5,9,4,1]},{"c":"PAPH","n":"UPMC Hamot","s":"PA","k":[[18,16],[8,5],[16,11],[13,7],[11,5],[8,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PAPT","n":"University of Pittsburgh Medical Center","s":"PA","k":[[188,67],[201,77],[191,69],[163,63],[172,82],[119,54]],"l":[[119,72],[120,76],[139,83],[146,77],[140,82],[82,43]],"p":[0,1,4,0,2,0],"kp":[5,4,4,3,5,4]},{"c":"PARH","n":"Reading Hospital","s":"PA","k":[[4,1],[0,0],[0,0],[0,0],[0,0],[0,0]],"l":[[2,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PASC","n":"St. Christopher's Hospital for Children","s":"PA","k":[[6,0],[5,0],[1,0],[0,0],[2,1],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PATJ","n":"Thomas Jefferson University Hospital","s":"PA","k":[[94,21],[93,18],[94,20],[111,36],[100,20],[92,17]],"l":[[87,4],[74,1],[70,1],[90,6],[81,7],[58,3]],"p":[0,0,0,0,0,0],"kp":[6,7,3,3,0,2]},{"c":"PATU","n":"Temple University Hospital","s":"PA","k":[[40,14],[44,16],[66,22],[75,33],[59,22],[56,24]],"l":[[10,0],[3,0],[8,0],[6,0],[6,0],[14,0]],"p":[0,0,0,0,0,0],"kp":[2,2,2,2,2,2]},{"c":"PAUP","n":"Hospital of the University of Pennsylvania","s":"PA","k":[[208,79],[225,83],[249,116],[278,134],[310,85],[215,85]],"l":[[150,16],[167,14],[161,24],[157,13],[172,23],[85,7]],"p":[2,2,0,1,0,0],"kp":[11,21,12,13,37,13]},{"c":"PAVA","n":"VA Pittsburgh Healthcare System","s":"PA","k":[[27,8],[29,10],[45,10],[43,9],[44,8],[18,1]],"l":[[16,0],[24,0],[24,0],[19,0],[15,0],[10,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"PRSJ","n":"Auxilio Mutuo Hospital","s":"PR","k":[[66,5],[53,5],[70,11],[93,10],[48,7],[31,1]],"l":[[35,0],[36,0],[30,0],[40,0],[40,0],[22,0]],"p":[0,0,0,0,0,0],"kp":[9,10,13,11,13,6]},{"c":"RIRH","n":"Rhode Island Hospital","s":"RI","k":[[51,16],[57,26],[56,17],[47,14],[49,19],[20,8]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"SCCH","n":"MUSC Children's Hospital","s":"SC","k":[[0,0],[0,0],[0,0],[2,0],[3,1],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[1,0],[6,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"SCLA","n":"MUSC Lancaster","s":"SC","k":[[0,0],[24,0],[90,0],[104,0],[117,0],[82,1]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"SCMU","n":"Medical University of South Carolina","s":"SC","k":[[410,52],[390,55],[300,45],[341,68],[382,65],[227,40]],"l":[[77,0],[75,0],[49,0],[143,0],[177,0],[101,1]],"p":[3,0,1,2,1,2],"kp":[21,36,30,21,19,10]},{"c":"SCPG","n":"Prisma Health Greenville Memorial Hospital","s":"SC","k":[[0,0],[28,7],[111,18],[133,14],[116,13],[84,12]],"l":[[0,0],[0,0],[0,0],[0,0],[10,0],[8,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,6,16,2]},{"c":"SDMK","n":"Avera McKennan Hospital","s":"SD","k":[[37,23],[36,18],[32,15],[42,6],[25,6],[13,3]],"l":[[6,0],[4,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,1,0,0,0],"kp":[0,2,1,1,0,0]},{"c":"SDSV","n":"Sanford Health/USD Medical Center","s":"SD","k":[[22,10],[21,5],[17,4],[27,9],[25,6],[16,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TNEM","n":"Erlanger Medical Center","s":"TN","k":[[33,5],[41,12],[44,4],[33,5],[29,3],[22,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TNLB","n":"Le Bonheur Children's Medical Center","s":"TN","k":[[3,0],[7,2],[8,3],[7,2],[9,2],[3,1]],"l":[[1,0],[3,0],[6,0],[1,0],[4,0],[1,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TNMH","n":"Methodist University Hospital","s":"TN","k":[[196,23],[212,27],[243,18],[263,28],[170,17],[118,10]],"l":[[106,4],[98,2],[89,0],[72,0],[46,0],[30,0]],"p":[3,0,2,0,1,0],"kp":[8,8,6,5,10,7]},{"c":"TNST","n":"Saint Thomas Hospital","s":"TN","k":[[93,15],[100,20],[162,18],[192,11],[164,16],[77,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TNUK","n":"University of Tennessee Medical Center at Knoxville","s":"TN","k":[[57,4],[53,10],[64,9],[68,13],[73,19],[35,6]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TNVU","n":"Vanderbilt University Medical Center","s":"TN","k":[[315,66],[264,57],[326,54],[391,57],[385,66],[237,37]],"l":[[123,5],[149,9],[169,0],[208,6],[201,1],[133,1]],"p":[0,1,0,0,1,2],"kp":[11,3,8,5,11,7]},{"c":"TXAS","n":"Baylor  Scott and White All Saints Medical Center-Fort Worth","s":"TX","k":[[95,24],[106,25],[82,19],[66,13],[73,18],[39,15]],"l":[[45,0],[42,0],[41,0],[46,0],[55,0],[41,0]],"p":[0,1,0,0,0,0],"kp":[4,6,1,3,4,4]},{"c":"TXBC","n":"University Hospital, University of Texas Health Science Center","s":"TX","k":[[181,41],[154,46],[200,63],[180,55],[201,46],[134,34]],"l":[[115,46],[131,49],[142,54],[158,66],[182,74],[122,45]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXCF","n":"Cook Children's Medical Center","s":"TX","k":[[16,0],[10,0],[8,0],[6,1],[6,0],[4,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXCM","n":"Children's Medical Center of Dallas","s":"TX","k":[[20,2],[9,4],[11,5],[21,7],[14,4],[21,5]],"l":[[15,0],[7,0],[6,0],[12,0],[20,0],[11,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXDC","n":"Driscoll Children's Hospital","s":"TX","k":[[5,0],[8,0],[6,1],[9,0],[6,0],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXDL","n":"Dell Children's Medical Center","s":"TX","k":[[0,0],[2,1],[0,0],[0,0],[0,0],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXDM","n":"North Austin Medical Center","s":"TX","k":[[48,22],[37,26],[23,15],[40,17],[34,18],[24,6]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXDR","n":"Doctor's Hospital at Renaissance","s":"TX","k":[[42,7],[49,4],[34,7],[34,2],[101,11],[62,5]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXDS","n":"Dell Seton Medical Center at The University of Texas at Austin","s":"TX","k":[[0,0],[8,7],[26,17],[32,18],[30,23],[24,17]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,1,0,0]},{"c":"TXFW","n":"Texas Health Harris Methodist Fort Worth Hospital","s":"TX","k":[[24,0],[25,2],[43,9],[56,12],[71,22],[29,11]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXHD","n":"Medical City Dallas Hospital","s":"TX","k":[[145,27],[180,40],[136,34],[187,52],[235,85],[130,41]],"l":[[0,0],[2,0],[19,0],[32,0],[46,0],[25,0]],"p":[1,0,0,2,0,0],"kp":[2,14,10,12,7,10]},{"c":"TXHH","n":"Memorial Hermann Hospital, University of Texas at Houston","s":"TX","k":[[46,5],[84,38],[132,88],[30,18],[11,0],[17,0]],"l":[[30,0],[27,0],[30,0],[3,0],[4,0],[27,0]],"p":[0,0,0,0,0,0],"kp":[0,2,3,1,0,0]},{"c":"TXHI","n":"CHI St. Luke's Health Baylor College of Medicine Medical Center","s":"TX","k":[[106,22],[108,15],[111,11],[123,22],[153,32],[82,16]],"l":[[70,0],[82,0],[88,0],[118,0],[120,0],[72,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXHS","n":"Methodist Specialty and Transplant Hospital","s":"TX","k":[[437,221],[342,171],[394,214],[352,177],[344,168],[149,73]],"l":[[72,0],[68,0],[63,0],[67,0],[65,0],[39,0]],"p":[2,0,1,1,2,1],"kp":[1,3,6,6,3,0]},{"c":"TXJS","n":"University of Texas Medical Branch at Galveston","s":"TX","k":[[86,13],[103,9],[115,8],[98,20],[90,28],[45,17]],"l":[[12,0],[6,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,1,0,0,0,0]},{"c":"TXLM","n":"Covenant Medical Center","s":"TX","k":[[0,0],[0,0],[0,0],[0,0],[9,0],[3,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXLP","n":"Las Palmas Medical Center","s":"TX","k":[[45,9],[51,6],[63,13],[56,12],[52,11],[17,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXMC","n":"Methodist Dallas Medical Center","s":"TX","k":[[120,19],[149,16],[118,10],[166,23],[152,22],[73,9]],"l":[[61,0],[73,0],[64,0],[81,0],[69,0],[56,0]],"p":[0,0,0,0,0,0],"kp":[5,4,3,4,3,2]},{"c":"TXMH","n":"Houston Methodist Hospital","s":"TX","k":[[242,113],[244,103],[257,122],[287,123],[329,134],[225,82]],"l":[[182,1],[223,1],[249,4],[293,11],[338,15],[210,11]],"p":[2,0,1,1,2,3],"kp":[14,16,11,4,9,13]},{"c":"TXPL","n":"Medical City Fort Worth","s":"TX","k":[[108,15],[126,18],[115,31],[117,23],[96,15],[57,13]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,4,2]},{"c":"TXPM","n":"Parkland Health and Hospital System","s":"TX","k":[[10,0],[32,0],[51,1],[38,1],[34,1],[29,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXSP","n":"UT Southwestern Medical Center/William P. Clements Jr. University Hospital","s":"TX","k":[[210,34],[181,33],[238,37],[205,25],[212,45],[124,32]],"l":[[118,6],[104,7],[114,9],[128,4],[121,4],[78,2]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,1]},{"c":"TXSW","n":"Scott and White Memorial Hospital","s":"TX","k":[[167,24],[127,18],[66,10],[52,8],[69,16],[31,4]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[4,1,0,0,0,0],"kp":[10,6,4,0,7,1]},{"c":"TXTC","n":"Texas Children's Hospital","s":"TX","k":[[35,11],[28,7],[36,12],[38,7],[56,10],[20,6]],"l":[[40,0],[35,0],[34,0],[36,0],[51,0],[19,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXTX","n":"Baylor University Medical Center","s":"TX","k":[[230,52],[190,47],[178,45],[193,41],[268,114],[157,90]],"l":[[74,10],[81,15],[79,16],[114,15],[120,12],[59,7]],"p":[1,1,0,0,0,2],"kp":[6,11,6,16,9,7]},{"c":"TXUC","n":"University Children's Health","s":"TX","k":[[15,4],[18,10],[18,7],[24,11],[17,4],[11,5]],"l":[[7,6],[5,5],[7,2],[13,7],[3,2],[6,4]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"TXVA","n":"Michael E. DeBakey VA Medical Center","s":"TX","k":[[20,8],[23,4],[40,3],[32,7],[34,3],[15,2]],"l":[[4,0],[9,0],[12,0],[17,0],[14,0],[7,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"UTLD","n":"Intermountain Medical Center","s":"UT","k":[[164,40],[159,32],[198,42],[267,67],[252,74],[134,40]],"l":[[94,7],[104,13],[182,16],[189,10],[227,3],[144,0]],"p":[0,0,0,0,0,0],"kp":[6,8,4,4,4,0]},{"c":"UTMC","n":"University of Utah Medical Center","s":"UT","k":[[203,48],[153,53],[158,62],[160,50],[175,59],[111,40]],"l":[[43,6],[64,8],[54,6],[50,1],[47,0],[29,0]],"p":[1,1,0,0,0,0],"kp":[2,13,1,3,6,2]},{"c":"UTPC","n":"Primary Children's Hospital","s":"UT","k":[[15,10],[15,8],[11,6],[10,5],[12,3],[4,4]],"l":[[6,3],[13,2],[6,2],[14,8],[21,10],[15,8]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"VACH","n":"Children's Hospital of the King's Daughters","s":"VA","k":[[4,1],[4,1],[6,2],[8,4],[3,2],[3,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"VAFH","n":"Inova Fairfax Hospital","s":"VA","k":[[131,26],[117,30],[156,32],[193,18],[188,43],[113,24]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[1,0,0,3,0,0],"kp":[5,5,5,8,2,4]},{"c":"VAHD","n":"Henrico Doctors' Hospital","s":"VA","k":[[36,20],[34,12],[42,9],[52,7],[37,14],[22,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"VAMC","n":"VCU Health System Authority, VCUMC","s":"VA","k":[[275,53],[289,40],[305,37],[329,55],[315,40],[183,31]],"l":[[164,19],[168,21],[205,22],[189,24],[197,26],[106,9]],"p":[0,1,0,1,0,0],"kp":[9,9,12,16,13,5]},{"c":"VANG","n":"Sentara Norfolk General Hospital","s":"VA","k":[[69,26],[69,18],[87,17],[100,19],[96,24],[50,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,2,1,0,0,0],"kp":[1,0,0,1,3,2]},{"c":"VAUV","n":"University of Virginia Health Sciences Center","s":"VA","k":[[149,44],[185,33],[195,27],[241,32],[196,29],[77,6]],"l":[[82,12],[85,10],[83,13],[80,6],[99,8],[59,12]],"p":[2,1,1,1,1,1],"kp":[5,11,7,5,4,2]},{"c":"VTMC","n":"The University of Vermont Medical Center","s":"VT","k":[[5,0],[10,3],[12,4],[16,7],[2,2],[0,0]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"WACH","n":"Seattle Children's Hospital","s":"WA","k":[[30,9],[13,7],[24,3],[24,2],[25,4],[22,3]],"l":[[14,0],[17,9],[15,4],[11,3],[14,6],[5,2]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"WASH","n":"Providence Sacred Heart Medical Center & Children's Hospital","s":"WA","k":[[41,0],[48,3],[35,3],[59,5],[85,1],[43,1]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"WASM","n":"Swedish Medical Center","s":"WA","k":[[108,27],[109,25],[134,22],[124,21],[131,19],[63,14]],"l":[[31,0],[45,0],[68,0],[76,0],[102,0],[68,0]],"p":[0,1,0,0,0,0],"kp":[3,1,2,3,2,0]},{"c":"WAUW","n":"University of Washington Medical Center","s":"WA","k":[[194,44],[198,43],[201,41],[251,44],[194,39],[113,17]],"l":[[116,12],[114,25],[145,24],[108,9],[117,8],[81,7]],"p":[0,0,0,0,0,0],"kp":[7,5,3,5,2,1]},{"c":"WAVM","n":"Virginia Mason Medical Center","s":"WA","k":[[104,24],[80,27],[83,20],[71,16],[100,23],[46,10]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[4,3,4,2,1,3]},{"c":"WICH","n":"Children's Hospital of Wisconsin","s":"WI","k":[[13,4],[6,1],[6,1],[9,2],[7,1],[6,2]],"l":[[2,1],[1,0],[2,0],[2,0],[4,0],[4,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"WISE","n":"Froedtert Memorial Lutheran Hospital","s":"WI","k":[[69,24],[55,6],[113,8],[177,58],[176,73],[87,30]],"l":[[16,0],[17,0],[41,0],[53,0],[64,0],[50,0]],"p":[0,0,0,0,0,0],"kp":[4,0,1,9,12,2]},{"c":"WISL","n":"Aurora St. Luke's Medical Center","s":"WI","k":[[43,21],[45,19],[49,15],[60,15],[73,24],[40,12]],"l":[[28,0],[17,0],[17,0],[12,0],[7,0],[13,0]],"p":[0,0,0,0,0,0],"kp":[1,1,2,1,2,0]},{"c":"WIUW","n":"University of Wisconsin Hospital and Clinics","s":"WI","k":[[235,69],[264,70],[288,102],[284,94],[285,95],[194,59]],"l":[[104,5],[112,1],[126,5],[112,6],[134,6],[98,2]],"p":[0,0,0,0,0,0],"kp":[20,20,20,13,21,12]},{"c":"WVCA","n":"Charleston Area Medical Center","s":"WV","k":[[91,3],[64,0],[128,9],[89,7],[82,3],[56,3]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]},{"c":"WVWU","n":"West Virginia University Hospitals Inc.","s":"WV","k":[[19,0],[26,0],[8,0],[6,1],[13,2],[6,2]],"l":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"p":[0,0,0,0,0,0],"kp":[0,0,0,0,0,0]}];
+/* ==== END OPTN DATA ==== */
+
+const YRS = [2021,2022,2023,2024,2025,2026];
+const asofDate = new Date(ASOF + "T12:00:00");
+const thruDate = new Date((typeof THRU !== "undefined" ? THRU : ASOF) + "T12:00:00");
+const frac = Math.min(1, Math.max(0.05,
+  (Date.UTC(thruDate.getFullYear(), thruDate.getMonth(), thruDate.getDate()) - Date.UTC(thruDate.getFullYear(),0,1)) / (365*86400000)));
+const fmtD = d => d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+document.getElementById('asof-label').textContent = fmtD(asofDate);
+const thruEl = document.getElementById('thru-label'); if (thruEl) thruEl.textContent = fmtD(thruDate);
+
+const STATES = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",DC:"District of Columbia",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",PR:"Puerto Rico",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"};
+
+function trend(tot25, tot21){
+  if (tot21 < 10 && tot25 >= 20) return {cls:'b-new', label:'new', strong:true};
+  if (tot21 >= 10 && tot25 >= 20 && tot25 >= tot21*1.15) return {cls:'b-up', label:'▲ +' + Math.round((tot25/tot21-1)*100) + '%', strong: tot25 >= tot21*1.3};
+  if (tot21 >= 20 && tot25 <= tot21*0.85) return {cls:'b-dn', label:'▼ −' + Math.round((1-tot25/tot21)*100) + '%'};
+  return null;
+}
+function pace(ytd26, tot25){
+  if (tot25 < 10) return null;
+  const ann = ytd26/frac;
+  if (ann >= tot25*1.10) return {cls:'pace-up', ch:'↗', ann:Math.round(ann)};
+  if (ann <= tot25*0.90) return {cls:'pace-dn', ch:'↘', ann:Math.round(ann)};
+  return {cls:'pace-ev', ch:'→', ann:Math.round(ann)};
+}
+
+// derive per-center metrics
+const rows = DATA.map(c => {
+  const kT = c.k.map(v=>v[0]), kL = c.k.map(v=>v[1]);
+  const lT = c.l.map(v=>v[0]), lL = c.l.map(v=>v[1]);
+  const abd25 = kT[4] + lT[4] + c.p[4] + c.kp[4];
+  const k5T = kT.slice(0,5).reduce((a,b)=>a+b,0), k5L = kL.slice(0,5).reduce((a,b)=>a+b,0);
+  const l5T = lT.slice(0,5).reduce((a,b)=>a+b,0), l5L = lL.slice(0,5).reduce((a,b)=>a+b,0);
+  return {
+    c: c.c, n: c.n, s: c.s, p: c.p, kp: c.kp,
+    k25: kT[4], kld: kL[4], kldPct: kT[4] ? kL[4]/kT[4] : 0, k26: kT[5],
+    l25: lT[4], lld: lL[4], l26: lT[5],
+    ld5Share: k5T ? k5L/k5T : 0, k5T,
+    ldlt5Share: l5T ? l5L/l5T : 0, l5T, l5L,
+    p25: c.p[4], kp25: c.kp[4], abd: abd25,
+    kTrend: trend(kT[4], kT[0]), lTrend: trend(lT[4], lT[0]),
+    kPace: pace(kT[5], kT[4]), lPace: pace(lT[5], lT[4]),
+    ldNow: kL[4] + lL[4], ldBase: kL[0] + lL[0],
+    kT, kL, lT, lL,
+    growing: null
+  };
+});
+rows.forEach(r => { r.growing = (r.kTrend && r.kTrend.strong) || (r.lTrend && r.lTrend.strong); });
+
+// national rank pools (computed once; ranks are competition-style: 1 + count of strictly larger)
+const kAct25 = rows.filter(x => x.k25 > 0), kAct5 = rows.filter(x => x.k5T > 0);
+const lAct25 = rows.filter(x => x.l25 > 0), lAct5 = rows.filter(x => x.l5T > 0);
+const kShareElig = rows.filter(x => x.k5T >= 100);
+const lShareElig = rows.filter(x => x.l5T >= 50);
+const rankOf = (pool, key, v) => pool.filter(x => x[key] > v).length + 1;
+
+// state dropdown
+const stSel = document.getElementById('state');
+[...new Set(rows.map(r=>r.s))].sort().forEach(s => {
+  const o = document.createElement('option'); o.value = s; o.textContent = STATES[s] || s; stSel.appendChild(o);
+});
+
+// leader cards — growth cards honor the 5-year / 1-year window toggle
+let growWin = '5yr'; // '5yr' -> base 2021 (idx 0); '1yr' -> base 2024 (idx 3)
+function fillLead(id, list, fmt, deltaFmt){
+  document.getElementById(id).innerHTML = list.map(o => {
+    return '<li><span class="nm" data-c="'+o.r.c+'" title="'+o.r.n.replace(/"/g,'&quot;')+'">'+o.r.n+'</span>'
+      + '<span class="delta">'+deltaFmt(o)+'</span></li>';
+  }).join('');
+}
+const growDelta = o => o.base < 10 ? 'new' : '+'+Math.round((o.cur/o.base-1)*100)+'%';
+function renderLeaders(){
+  // '5yr': 2021→2025 · '1yr': 2024→2025 · '26': 2025→annualized 2026
+  const is26 = growWin === '26';
+  const bi = growWin === '5yr' ? 0 : (growWin === '1yr' ? 3 : 4);
+  const cur = arr => is26 ? Math.round(arr[5]/frac) : arr[4];
+  const arrow = is26 ? '→≈' : '→';
+  const volLeaders = orgTot => rows
+    .map(r => ({r, base: r[orgTot][bi], cur: cur(r[orgTot])}))
+    .filter(o => o.cur >= 25 && o.cur > o.base)
+    .map(o => ({...o, gain: o.cur - o.base}))
+    .sort((a,b) => b.gain - a.gain).slice(0,5);
+  fillLead('lead-liver', volLeaders('lT'), o => o.base+arrow+o.cur, growDelta);
+  fillLead('lead-kidney', volLeaders('kT'), o => o.base+arrow+o.cur, growDelta);
+  fillLead('lead-ldgrow',
+    rows.map(r => ({r, base: r.kL[bi] + r.lL[bi], cur: is26 ? Math.round((r.kL[5]+r.lL[5])/frac) : r.kL[4]+r.lL[4]}))
+        .filter(o => o.cur >= 20 && o.cur > o.base)
+        .map(o => ({...o, gain: o.cur - o.base}))
+        .sort((a,b) => b.gain - a.gain).slice(0,5),
+    o => o.base+arrow+o.cur+' LD', growDelta);
+}
+renderLeaders();
+fillLead('lead-ld',
+  rows.filter(r => r.k5T >= 100).sort((a,b)=>b.ld5Share-a.ld5Share).slice(0,5)
+      .map(o => ({r:o, share:o.ld5Share})),
+  o => o.r.k25 + ' kidney ’25',
+  o => Math.round(o.share*100)+'% LD');
+fillLead('lead-ldlt',
+  rows.filter(r => r.l5T >= 50 && r.l5L > 0).sort((a,b)=>b.ldlt5Share-a.ldlt5Share).slice(0,5)
+      .map(o => ({r:o, share:o.ldlt5Share})),
+  o => o.r.l5L + ' LDLT / ' + o.r.l5T + ' liver',
+  o => Math.round(o.share*100)+'% LD');
+[['win5','5yr'],['win1','1yr'],['win26','26']].forEach(([id, w]) => {
+  document.getElementById(id).addEventListener('click', () => {
+    growWin = w;
+    [['win5','5yr'],['win1','1yr'],['win26','26']].forEach(([bid, bw]) =>
+      document.getElementById(bid).classList.toggle('on', w === bw));
+    renderLeaders();
+  });
+});
+document.querySelector('.leaders').addEventListener('click', e => {
+  const el = e.target.closest('.nm');
+  if (!el) return;
+  document.getElementById('q').value = el.title; openCode = el.dataset.c; render();
+  document.getElementById('tbl').scrollIntoView({behavior:'smooth',block:'start'});
+});
+
+// detail chart: total (solid) + living (dashed), 2021-2025 with annualized 2026 hollow endpoints
+function detailSVG(tot, liv, color){
+  const w = 330, h = 96, padL = 8, padR = 34, padY = 10;
+  const t5 = tot.slice(0,5), l5 = liv.slice(0,5);
+  const annT = tot[4] >= 10 || tot[5] > 0 ? tot[5]/frac : null;
+  const annL = liv[5] > 0 ? liv[5]/frac : null;
+  const all = t5.concat(l5, annT!=null?[annT]:[], annL!=null?[annL]:[]);
+  const mx = Math.max(...all, 1);
+  const n = 6;
+  const x = i => padL + i*(w-padL-padR)/(n-1);
+  const y = v => h - padY - (v/mx)*(h-2*padY);
+  function path(arr){ let d=''; arr.forEach((v,i)=>{ d += (i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1); }); return d; }
+  let s = '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" style="max-width:100%;height:auto">';
+  s += '<line x1="'+padL+'" y1="'+y(0)+'" x2="'+(w-padR)+'" y2="'+y(0)+'" stroke="var(--line)" stroke-width="1"/>';
+  s += '<path d="'+path(t5)+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  s += '<path d="'+path(l5)+'" fill="none" stroke="'+color+'" stroke-width="1.6" stroke-dasharray="4 3" opacity=".75" stroke-linejoin="round" stroke-linecap="round"/>';
+  s += '<circle cx="'+x(4)+'" cy="'+y(t5[4])+'" r="2.6" fill="'+color+'"/>';
+  s += '<circle cx="'+x(4)+'" cy="'+y(l5[4])+'" r="2.2" fill="'+color+'" opacity=".75"/>';
+  if (annT != null){
+    s += '<line x1="'+x(4)+'" y1="'+y(t5[4])+'" x2="'+x(5)+'" y2="'+y(annT)+'" stroke="'+color+'" stroke-width="1.4" stroke-dasharray="2 2" opacity=".6"/>';
+    s += '<circle cx="'+x(5)+'" cy="'+y(annT)+'" r="2.8" fill="var(--surface)" stroke="'+color+'" stroke-width="1.6"/>';
+  }
+  if (annL != null){
+    s += '<line x1="'+x(4)+'" y1="'+y(l5[4])+'" x2="'+x(5)+'" y2="'+y(annL)+'" stroke="'+color+'" stroke-width="1.2" stroke-dasharray="2 2" opacity=".45"/>';
+    s += '<circle cx="'+x(5)+'" cy="'+y(annL)+'" r="2.3" fill="var(--surface)" stroke="'+color+'" stroke-width="1.3" opacity=".75"/>';
+  }
+  s += '<text x="'+(x(4)+6)+'" y="'+(y(t5[4])+3)+'" fill="var(--mut)" font-size="10">'+t5[4]+'</text>';
+  s += '</svg>';
+  return s;
+}
+function ord(n){
+  const t = n % 100;
+  const s = (t >= 11 && t <= 13) ? 'th' : (n % 10 === 1 ? 'st' : n % 10 === 2 ? 'nd' : n % 10 === 3 ? 'rd' : 'th');
+  return n + '<small>' + s + '</small>';
+}
+function rankChip(n, title){
+  return n ? '<span class="drank" title="'+title+'">'+ord(n)+'</span>' : '';
+}
+function organDetail(name, cssVar, tot, liv, tr, pc, ldLabel, rankTx, cornerRank){
+  const yrsHdr = YRS.map((y,i)=> '<th>'+(i===5?'’26 YTD':y)+'</th>').join('');
+  const totRow = tot.map(v=>'<td>'+v+'</td>').join('');
+  const livRow = liv.map(v=>'<td>'+v+'</td>').join('');
+  const badge = tr ? '<span class="badge '+tr.cls+'">'+tr.label+'</span>' : '<span class="badge b-flat">steady</span>';
+  const paceTx = pc ? '<span class="'+pc.cls+'">'+pc.ch+' ’26 annualized ≈ '+pc.ann+'</span>' : '<span class="pace-ev">’26 pace n/a</span>';
+  return '<div class="dpanel">'+rankChip(cornerRank, '2025 national rank by '+name.toLowerCase()+' volume')
+    + '<h4><span class="sw" style="background:var('+cssVar+')"></span>'+name+'</h4>'
+    + '<p class="dmeta">'+badge+' vs 2021 &nbsp;&middot;&nbsp; '+paceTx+'</p>'
+    + (rankTx ? '<p class="dmeta">'+rankTx+'</p>' : '')
+    + detailSVG(tot, liv, 'var('+cssVar+')')
+    + '<div class="dleg" style="--c:var('+cssVar+')"><span class="lt">Total</span><span class="ll">'+ldLabel+'</span></div>'
+    + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+yrsHdr+'</tr>'
+    + '<tr><td>Total</td>'+totRow+'</tr>'
+    + '<tr><td>Living</td>'+livRow+'</tr></table></div></div>';
+}
+function shareSVG(kShare, lShare){
+  // shares as fractions per year (null when no volume); '26 YTD plotted hollow
+  const w = 330, h = 96, padL = 8, padR = 40, padY = 12, n = 6;
+  const vals = kShare.concat(lShare).filter(v => v != null);
+  const mx = Math.max(0.25, ...vals);
+  const x = i => padL + i*(w-padL-padR)/(n-1);
+  const y = v => h - padY - (v/mx)*(h-2*padY);
+  function line(arr, color, dash){
+    let d = '', s = '';
+    arr.slice(0,5).forEach((v,i)=>{ if(v==null) return; d += (d?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1); });
+    if (d) s += '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    const l25 = arr[4];
+    if (l25 != null){
+      s += '<circle cx="'+x(4)+'" cy="'+y(l25)+'" r="2.6" fill="'+color+'"/>';
+      s += '<text x="'+(x(4)+6)+'" y="'+(y(l25)+3)+'" fill="var(--mut)" font-size="10">'+Math.round(l25*100)+'%</text>';
+    }
+    if (arr[5] != null && l25 != null){
+      s += '<line x1="'+x(4)+'" y1="'+y(l25)+'" x2="'+x(5)+'" y2="'+y(arr[5])+'" stroke="'+color+'" stroke-width="1.4" stroke-dasharray="2 2" opacity=".6"/>';
+      s += '<circle cx="'+x(5)+'" cy="'+y(arr[5])+'" r="2.8" fill="var(--surface)" stroke="'+color+'" stroke-width="1.6"/>';
+    }
+    return s;
+  }
+  let s = '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" style="max-width:100%;height:auto">';
+  s += '<line x1="'+padL+'" y1="'+y(0)+'" x2="'+(w-padR)+'" y2="'+y(0)+'" stroke="var(--line)" stroke-width="1"/>';
+  s += line(kShare, 'var(--kid)');
+  s += line(lShare, 'var(--liv)');
+  s += '</svg>';
+  return s;
+}
+function shareDetail(r){
+  const kS = r.kT.map((t,i)=> t ? r.kL[i]/t : null);
+  const lS = r.lT.map((t,i)=> t ? r.lL[i]/t : null);
+  const pct = v => v==null ? '<span class="dim">–</span>' : Math.round(v*100)+'%';
+  const yrsHdr = YRS.map((y,i)=> '<th>'+(i===5?'’26 YTD':y)+'</th>').join('');
+  const kSR = r.k5T >= 100 ? rankOf(kShareElig, 'ld5Share', r.ld5Share) : null;
+  const lSR = r.l5T >= 50 ? rankOf(lShareElig, 'ldlt5Share', r.ldlt5Share) : null;
+  let shareRank = 'Share rank (2021&ndash;25): ';
+  if (kSR || lSR){
+    shareRank += (kSR ? 'kidney <b>#'+kSR+'</b> of '+kShareElig.length : 'kidney below volume floor')
+      + ' &nbsp;&middot;&nbsp; ' + (lSR ? 'liver <b>#'+lSR+'</b> of '+lShareElig.length : 'liver below volume floor');
+  } else {
+    shareRank += 'below volume floor (kidney &ge; 100, liver &ge; 50 cases over 5 yrs)';
+  }
+  return '<div class="dpanel">'+rankChip(kSR, '5-year living-donor kidney share rank among high-volume programs')
+    + '<h4><span class="sw" style="background:var(--grow)"></span>Living-donor share</h4>'
+    + '<p class="dmeta">2021&ndash;25: kidney <b>'+Math.round(r.ld5Share*100)+'%</b> living donor'
+    + (r.l5T ? ' &nbsp;&middot;&nbsp; liver <b>'+Math.round(r.ldlt5Share*100)+'%</b>' : '')+'</p>'
+    + '<p class="dmeta">'+shareRank+'</p>'
+    + shareSVG(kS, lS)
+    + '<div class="dleg"><span class="lt" style="--c:var(--kid)">Kidney</span><span class="lt" style="--c:var(--liv)">Liver (LDLT)</span></div>'
+    + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+yrsHdr+'</tr>'
+    + '<tr><td>Kidney</td>'+kS.map(v=>'<td>'+pct(v)+'</td>').join('')+'</tr>'
+    + '<tr><td>Liver</td>'+lS.map(v=>'<td>'+pct(v)+'</td>').join('')+'</tr></table></div></div>';
+}
+function detailHTML(r){
+  const kp5 = x => x.kp.slice(0,5).reduce((a,b)=>a+b,0);
+  const active25 = rows.filter(x => x.kp25 > 0);
+  const active5 = rows.filter(x => kp5(x) > 0);
+  let rankLine;
+  if (r.kp25 > 0 || kp5(r) > 0){
+    const rk25 = r.kp25 > 0 ? (active25.filter(x => x.kp25 > r.kp25).length + 1) : null;
+    const rk5 = kp5(r) > 0 ? (active5.filter(x => kp5(x) > kp5(r)).length + 1) : null;
+    rankLine = 'SPK volume, national rank: '
+      + (rk25 ? '<b>#'+rk25+'</b> of '+active25.length+' programs in 2025' : 'no 2025 cases')
+      + (rk5 ? ' &nbsp;&middot;&nbsp; <b>#'+rk5+'</b> of '+active5.length+' over 2021&ndash;25' : '');
+  } else {
+    rankLine = 'No SPK volume 2021&ndash;25.';
+  }
+  const spkRank25 = r.kp25 > 0 ? active25.filter(x => x.kp25 > r.kp25).length + 1 : null;
+  const pkRow = '<div class="dpanel">'+rankChip(spkRank25, '2025 national rank by SPK volume')
+    + '<h4>Pancreas &amp; SPK</h4>'
+    + '<p class="dmeta">'+rankLine+'</p>'
+    + '<div class="dtblwrap"><table class="dtbl"><tr><th></th>'+YRS.map((y,i)=>'<th>'+(i===5?'’26 YTD':y)+'</th>').join('')+'</tr>'
+    + '<tr><td>Pancreas</td>'+r.p.map(v=>'<td>'+v+'</td>').join('')+'</tr>'
+    + '<tr><td>SPK</td>'+r.kp.map(v=>'<td>'+v+'</td>').join('')+'</tr></table></div></div>';
+  function volRankTx(v25, v5, pool25, pool5, key25, key5){
+    if (!v25 && !v5) return null;
+    const r25 = v25 ? rankOf(pool25, key25, v25) : null;
+    const r5 = v5 ? rankOf(pool5, key5, v5) : null;
+    return 'National rank: '
+      + (r25 ? '<b>#'+r25+'</b> of '+pool25.length+' in 2025' : 'no 2025 cases')
+      + (r5 ? ' &nbsp;&middot;&nbsp; <b>#'+r5+'</b> of '+pool5.length+' over 2021&ndash;25' : '');
+  }
+  const kRankTx = volRankTx(r.k25, r.k5T, kAct25, kAct5, 'k25', 'k5T');
+  const lRankTx = volRankTx(r.l25, r.l5T, lAct25, lAct5, 'l25', 'l5T');
+  return '<div class="dwrap"><div class="dgrid">'
+    + organDetail('Kidney', '--kid', r.kT, r.kL, r.kTrend, r.kPace, 'Living donor', kRankTx, r.k25 > 0 ? rankOf(kAct25,'k25',r.k25) : null)
+    + organDetail('Liver', '--liv', r.lT, r.lL, r.lTrend, r.lPace, 'Living donor (LDLT)', lRankTx, r.l25 > 0 ? rankOf(lAct25,'l25',r.l25) : null)
+    + shareDetail(r)
+    + pkRow + '</div></div>';
+}
+
+// table
+let sortKey = 'abd', asc = false, openCode = null;
+const tb = document.getElementById('tb');
+function fmtPct(v){ return Math.round(v*100) + '%'; }
+function render(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const st = stSel.value;
+  const growOnly = document.getElementById('growonly').checked;
+  const mn = +document.getElementById('minabd').value || 0;
+  let list = rows.filter(r =>
+    (!st || r.s === st) &&
+    (!growOnly || r.growing) &&
+    r.abd >= mn &&
+    (!q || r.n.toLowerCase().includes(q) || (STATES[r.s]||'').toLowerCase().includes(q) || r.s.toLowerCase() === q));
+  list.sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (typeof av === 'string') return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    return asc ? av - bv : bv - av;
+  });
+  const abdRank = [...rows].sort((a,b)=>b.abd-a.abd).map(r=>r.c);
+  tb.innerHTML = list.map((r,i) => {
+    const isOpen = r.c === openCode;
+    let html = '<tr class="datarow '+(i%2?'even ':'')+(r.growing?'grow-row ':'')+(isOpen?'open':'')+'" data-c="'+r.c+'">'
+      + '<td class="rk">'+(abdRank.indexOf(r.c)+1)+'</td>'
+      + '<td class="cname"><span class="caret">&#9654;</span>'+r.n+'</td>'
+      + '<td class="cst dim">'+r.s+'</td>'
+      + '<td class="big">'+r.k25+'</td>'
+      + '<td>'+r.kld+' <span class="ldsub">('+(r.k25?fmtPct(r.kldPct):'–')+')</span></td>'
+      + '<td class="ytd"><b>'+r.k26+'</b></td>'
+      + '<td class="big">'+r.l25+'</td>'
+      + '<td>'+(r.lld || '<span class="dim">0</span>')+'</td>'
+      + '<td class="ytd"><b>'+r.l26+'</b></td>'
+      + '<td class="dim">'+r.p25+'</td>'
+      + '<td class="dim">'+r.kp25+'</td>'
+      + '<td class="big">'+r.abd+'</td>'
+      + '</tr>';
+    if (isOpen) html += '<tr class="detail"><td colspan="12">'+detailHTML(r)+'</td></tr>';
+    return html;
+  }).join('');
+  document.getElementById('count').textContent = list.length + ' of ' + rows.length + ' programs';
+  document.querySelectorAll('#tbl thead th').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.k === sortKey);
+    th.classList.toggle('asc', th.dataset.k === sortKey && asc);
+  });
+  tb.querySelectorAll('tr.datarow').forEach(tr => tr.addEventListener('click', () => {
+    openCode = (openCode === tr.dataset.c) ? null : tr.dataset.c;
+    render();
+  }));
+}
+document.querySelectorAll('#tbl thead th[data-k]').forEach(th => th.addEventListener('click', () => {
+  if (sortKey === th.dataset.k) asc = !asc; else { sortKey = th.dataset.k; asc = (th.dataset.k === 'n' || th.dataset.k === 's'); }
+  render();
+}));
+['q','state','growonly','minabd'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', render);
+});
+render();
+</script>
+
+</body></html>
